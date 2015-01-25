@@ -5,6 +5,7 @@ import collections
 from itertools import islice
 from elasticsearch import Elasticsearch
 import indexing
+import re
 es = Elasticsearch()
 
 # ----------------------------------------------------------
@@ -70,27 +71,6 @@ def getNeededInformation():
         string = key + ' ' + str(document_length[key])+'\n'
         save.writelines(string)
     save.close()
-def handleJson(details):
-    if 'description' in details and 'fieldWeight' in details['description']:
-        for d in details['details']:
-            if 'tf(' not in d['description']:
-                continue
-            for f in d['details']:
-                if 'termFreq' not in f['description'] and 'phraseFreq' not in f['description']:
-                    continue
-                return f['value']
-
-    for detail in details['details']:
-        if 'fieldWeight' not in detail['description']:
-            continue
-        for d in detail['details']:
-            if 'tf(' not in d['description']:
-                continue
-            for f in d['details']:
-                if 'termFreq' not in f['description'] and 'phraseFreq' not in f['description']:
-                    continue
-                return f['value']
-    return -1
 # ----------------------------------------------------------
 def getInformation(keyword, result):
     df = result['hits']['total']
@@ -101,18 +81,20 @@ def getInformation(keyword, result):
         the_id = hit['_id'].encode('UTF-8')
         term = es.termvector(index  ='ap_dataset', doc_type = 'document', id=the_id)
         docno = hit['_source']['docno'].encode('UTF-8')
-        # print the_id
-        # tf = hit['_explanation']['details'][0]['details'][1]['details'][0]['details'][0]['value']
-        # print hit['_explanation']['details'][0]
-        details = hit['_explanation']['details'][0]
-        tf = handleJson(details)
+        try:
+            TARGET = re.compile('.*termFreq=(.*?)\'.*')
+            details = str(hit['_explanation']['details'])
+            tf = float(TARGET.match(details).group(1))
+        except AttributeError:
+            TARGET = re.compile('.*phraseFreq=(.*?)\'.*')
+            details = str(hit['_explanation']['details'])
+            tf = float(TARGET.match(details).group(1))
         temp = {
             'document_length': document_length[docno],
             'docno': docno,
             'tf': tf,
             'df': df
         }
-        # print keyword, temp
         if tf  == -1:
             print keyword
             sys.exit(-1)
@@ -172,7 +154,7 @@ def getPostings(keyword):
         }
         },
         'explain' : 'true',
-        'size' : 85000})
+        'size' : 1000})
     info = getInformation(keyword, result)
     return info
 # ----------------------------------------------------------
@@ -180,7 +162,9 @@ def sort(data, k):
     # sort the dictionary, and return the first k pairs
    result = sorted(data.items(), key=lambda x:(-x[1],x[0]))
    return list(islice(result, k))
-# def sort1(data, k):
+def sort1(data, k):
+    result = sorted(data.items(), key=lambda x:(x[1],x[0]))
+    return list(islice(result, k))
 
 # ----------------------------------------------------------
 def search(query, k):
@@ -213,8 +197,8 @@ def search(query, k):
     Okapi_TF_scores = sort(Okapi_TF_scores, k)
     TF_IDF_scores = sort(TF_IDF_scores, k)
     Okapi_BM25_socres = sort(Okapi_BM25_socres, k)
-    Laplace_scores = sort(Laplace_scores, k)
-    Jelinek_Mercer_scores = sort(Jelinek_Mercer_scores, k)
+    Laplace_scores = sort1(Laplace_scores, k)
+    Jelinek_Mercer_scores = sort1(Jelinek_Mercer_scores, k)
     return [Okapi_TF_scores, TF_IDF_scores, Okapi_BM25_socres, Laplace_scores,
     Jelinek_Mercer_scores]
     # print scores
