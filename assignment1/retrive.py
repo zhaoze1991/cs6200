@@ -127,9 +127,12 @@ def Laplace(d):
     length = d.information['document_length']
     p = (tf + 1) / (length + V)
     return math.log10(p)
-def Jelinek_Mercer(d):
+def Jelinek_Mercer(d, back_tf, back_len):
     f = 0.3
     tf = d.information['tf']
+    length = d.information['document_length']
+    p = f * (tf / length) + (1 - f) * ((back_tf - tf) / (back_len -length))
+    return math.log10(p)
 # ----------------------------------------------------------
 def getPostings(keyword):
     result = es.search(index = 'ap_dataset', doc_type = 'document',
@@ -156,21 +159,31 @@ def search(query, k):
     TF_IDF_scores = collections.defaultdict(lambda:0.0)
     Okapi_BM25_socres = collections.defaultdict(lambda:0.0)
     Laplace_scores = collections.defaultdict(lambda:0.0)
+    Jelinek_Mercer_scores = collections.defaultdict(lambda:0.0)
     for item in query:
         posting = getPostings(item)
         # term frequency in query
         freq = termFrequencyInQuery(item, query)
+        tf = 0.0
+        length = 0.0
         for doc in posting:
             docno = doc.information['docno']
             Okapi_TF_scores[docno] += Okapi_TF(doc)
             TF_IDF_scores[docno] += TF_IDF(doc)
             Okapi_BM25_socres[docno] += Okapi_BM25(freq, doc)
             Laplace_scores[docno] += Laplace(doc)
+            tf += doc.information['tf']
+            length += doc.information['document_length']
+        for doc in posting:
+            docno = doc.information['docno']
+            Jelinek_Mercer_scores[docno] += Jelinek_Mercer(doc, tf, length)
     Okapi_TF_scores = sort(Okapi_TF_scores, k)
     TF_IDF_scores = sort(TF_IDF_scores, k)
     Okapi_BM25_socres = sort(Okapi_BM25_socres, k)
     Laplace_scores = sort(Laplace_scores, k)
-    return [Okapi_TF_scores, TF_IDF_scores, Okapi_BM25_socres, Laplace_scores]
+    Jelinek_Mercer_scores = sort(Jelinek_Mercer_scores, k)
+    return [Okapi_TF_scores, TF_IDF_scores, Okapi_BM25_socres, Laplace_scores,
+    Jelinek_Mercer_scores]
     # print scores
 # ----------------------------------------------------------
 def stringOperation(q):
@@ -232,7 +245,7 @@ def doSearch():
     TF_IDF = []
     Okapi_BM25 = []
     Laplace_smoothing = []
-    # Jelinek_Mercer = []
+    Jelinek_Mercer = []
     for index in questions:
         print 'search ', questions[index]
         temp = ''
@@ -242,10 +255,12 @@ def doSearch():
         TF_IDF = outputFormat(TF_IDF, result[1], temp)
         Okapi_BM25 = outputFormat(Okapi_BM25, result[2], temp)
         Laplace_smoothing = outputFormat(Laplace_smoothing, result[3], temp)
+        Jelinek_Mercer = outputFormat(Jelinek_Mercer, result[4], temp)
     writeFile(Okapi_TF, 'Okpai_TF')
     writeFile(TF_IDF, 'TF_IDF')
     writeFile(Okapi_BM25, 'Okapi_BM25')
     writeFile(Laplace_smoothing, 'Laplace_smoothing')
+    writeFile(Jelinek_Mercer, 'Jelinek_Mercer')
 def getNeededInformationFromFile():
     f = open('cache', 'r')
     global V
