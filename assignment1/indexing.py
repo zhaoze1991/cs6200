@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/local/bin/python
 import sys, os
 import glob
 from elasticsearch import Elasticsearch
