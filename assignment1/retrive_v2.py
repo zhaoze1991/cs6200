@@ -10,6 +10,7 @@ es = Elasticsearch()
 # ----------------------------------------------------------
 # data definition
 stopwords = indexing.readFile('./AP_DATA/stoplist.txt')
+recentsearch = {}
 D = es.count(index = 'ap_dataset')['count'] # D is the total number of documents
 K = 100                        # K is the number of documents should be returned
 V = 10000000
@@ -100,6 +101,9 @@ def getInformation(keyword, result):
         the_id = hit['_id'].encode('UTF-8')
         term = es.termvector(index  ='ap_dataset', doc_type = 'document', id=the_id)
         docno = hit['_source']['docno'].encode('UTF-8')
+        # print the_id
+        # tf = hit['_explanation']['details'][0]['details'][1]['details'][0]['details'][0]['value']
+        # print hit['_explanation']['details'][0]
         details = hit['_explanation']['details'][0]
         tf = handleJson(details)
         temp = {
@@ -108,7 +112,10 @@ def getInformation(keyword, result):
             'tf': tf,
             'df': df
         }
-        print keyword, temp
+        # print keyword, temp
+        if tf  == -1:
+            print keyword
+            sys.exit(-1)
         d = Document(the_id, temp)
         output.append(d)
     return output
@@ -122,6 +129,7 @@ def termFrequencyInQuery(term, query):
 def Okapi_TF(d):
     global average
     tf = d.information['tf']
+    # TODO double-check if the length is correct
     length = d.information['document_length']
     return tf / (tf + 0.5 + 1.5 * (length / average))
 # ----------------------------------------------------------
@@ -182,7 +190,11 @@ def search(query, k):
     Laplace_scores = collections.defaultdict(lambda:0.0)
     Jelinek_Mercer_scores = collections.defaultdict(lambda:0.0)
     for item in query:
-        posting = getPostings(item)
+        if item not in recentsearch.keys():
+            posting = getPostings(item)
+            recentsearch[item] = posting
+        else:
+            posting = recentsearch[item]
         # term frequency in query
         freq = termFrequencyInQuery(item, query)
         tf = 0.0
