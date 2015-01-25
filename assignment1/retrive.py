@@ -25,8 +25,9 @@ class Document(object):
 # ----------------------------------------------------------
 def getNeededInformation():
     _id = 0
-    avg = 0
+    avg = 0.0
     global D
+    n = 0
     while _id < D :
         term = es.termvector(index = 'ap_dataset', doc_type='document', id = _id)
         if 'text' not in term['term_vectors']:
@@ -51,13 +52,14 @@ def getNeededInformation():
             'match_phrase':{
             '_id':{'query':_id}
             }}})
+        n += 1
         text = text['hits']['hits'][0]['_source']
         docno = text['docno'].encode('UTF-8')
         document_length[docno] = total
         avg += total
         _id += 1
     global average
-    average = avg / D
+    average = avg / n
     global V
     V =len(all_item)
     save = open('cache','w')
