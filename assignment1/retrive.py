@@ -126,13 +126,15 @@ def Laplace(d):
     tf = d.information['tf']
     length = d.information['document_length']
     p = (tf + 1) / (length + V)
-    return math.log10(p)
+    p = math.log10(p)
+    return p
 def Jelinek_Mercer(d, back_tf, back_len):
     f = 0.3
     tf = d.information['tf']
     length = d.information['document_length']
     p = f * (tf / length) + (1 - f) * ((back_tf - tf) / (back_len -length))
-    return math.log10(p)
+    p = math.log10(p)
+    return p
 # ----------------------------------------------------------
 def getPostings(keyword):
     result = es.search(index = 'ap_dataset', doc_type = 'document',
