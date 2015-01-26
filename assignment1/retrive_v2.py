@@ -4,7 +4,7 @@ import json
 import collections
 from itertools import islice
 from elasticsearch import Elasticsearch
-import indexing
+import indexing, cache_data
 import re
 es = Elasticsearch()
 
@@ -17,60 +17,12 @@ K = 100                        # K is the number of documents should be returned
 V = 10000000
 average = 200.0
 document_length = {}
-all_item = []
 class Document(object):
     """docstring for Document"""
     def __init__(self, the_id, info):
         super(Document, self).__init__()
         self.id = the_id
         self.information = info
-# ----------------------------------------------------------
-def getNeededInformation():
-    _id = 0
-    avg = 0.0
-    global D
-    n = 0
-    while _id < D :
-        term = es.termvector(index = 'ap_dataset', doc_type='document', id = _id)
-        if 'text' not in term['term_vectors']:
-            _id += 1
-            continue
-        term = term['term_vectors']['text']['terms']
-        total = 0
-        # get the length of the document
-        for key in term.items():
-            freq = key[1]['term_freq']
-            total += freq
-        term = term.keys()
-        for t in term:
-            t = t.encode('UTF-8')
-            if t in all_item:
-                continue
-            all_item.append(t)
-            # print t
-        text = es.search(index = 'ap_dataset', doc_type = 'document',
-            body = {
-            'query' : {
-            'match_phrase':{
-            '_id':{'query':_id}
-            }}})
-        n += 1
-        text = text['hits']['hits'][0]['_source']
-        docno = text['docno'].encode('UTF-8')
-        document_length[docno] = total
-        avg += total
-        _id += 1
-    global average
-    average = avg / n
-    global V
-    V =len(all_item)
-    save = open('cache','w')
-    save.writelines(str(V) +'\n')
-    save.writelines(str(average) + '\n')
-    for key in document_length:
-        string = key + ' ' + str(document_length[key])+'\n'
-        save.writelines(string)
-    save.close()
 # ----------------------------------------------------------
 def getInformation(keyword, result):
     df = result['hits']['total']
@@ -303,7 +255,10 @@ def getNeededInformationFromFile():
 def main():
     print 'get D, V, average document length'
     # getNeededInformation()
-    getNeededInformationFromFile()
+    if os.path.exists('./cache'):
+        getNeededInformationFromFile()
+    else:
+        cache_data.cache()
     print D, V, average
     print 'start to perform search'
     doSearch()

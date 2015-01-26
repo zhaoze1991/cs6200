@@ -5,7 +5,6 @@ import collections
 from itertools import islice
 from elasticsearch import Elasticsearch
 import indexing
-es = Elasticsearch()
 
 # ----------------------------------------------------------
 # data definition
@@ -16,6 +15,7 @@ V = 10000000
 average = 200.0
 document_length = {}
 all_item = []
+es = Elasticsearch()
 class Document(object):
     """docstring for Document"""
     def __init__(self, the_id, info):
