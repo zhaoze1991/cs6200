@@ -30,6 +30,8 @@ class Document(object):
         self.information = info
 # ----------------------------------------------------------
 def getInformation(keyword, result):
+    # this function will return df, tf etc. and return all the needed
+    # information in a list
     df = result['hits']['total']
     output = []
     total = 0.0
@@ -64,10 +66,10 @@ def termFrequencyInQuery(term, query):
         if t == term:
             freq += 1
     return freq
+# ----------------------------------------------------------
 def Okapi_TF(d):
     global average
     tf = d.information['tf']
-    # TODO double-check if the length is correct
     length = d.information['document_length']
     return tf / (tf + 0.5 + 1.5 * (length / average))
 # ----------------------------------------------------------
@@ -87,6 +89,7 @@ def Okapi_BM25(tfq, d):
     two = (tf + k1 * tf) / (tf + k1 * (1 - b + (b * length) / average))
     three = (tfq + k2 * tfq) / (tfq + k2)
     return one * two * three
+# ----------------------------------------------------------
 def Laplace(d):
     tf = d.information['tf']
     length = d.information['document_length']
@@ -94,19 +97,21 @@ def Laplace(d):
     p = math.log10(p)
     return p
 def Laplace2(tf, length):
+    # handle when the document was not hit
     global V
     p = (tf + 1) / float((length + V))
     p = math.log10(p)
     return p
+# ----------------------------------------------------------
 def Jelinek_Mercer(d, back_tf, back_len):
     f = 0.3
     tf = d.information['tf']
     length = d.information['document_length']
-    # p = f * (tf / length) + (1 - f) * ((back_tf - tf) / (back_len -length))
     p = f * (tf / length) + (1 - f) * (back_tf  / back_len)
     p = math.log10(p)
     return p
 def Jelinek_Mercer2(length, back_tf, back_len):
+    # handle when the document was not hit
     f = 0.3
     tf = 0
     p = f * (tf / length) + (1 - f) * (back_tf  / back_len)
@@ -130,10 +135,6 @@ def sort(data, k):
     # sort the dictionary, and return the first k pairs
    result = sorted(data.items(), key=lambda x:(-x[1],x[0]))
    return list(islice(result, k))
-def sort1(data, k):
-    result = sorted(data.items(), key=lambda x:(x[1],x[0]))
-    return list(islice(result, k))
-
 # ----------------------------------------------------------
 def search(query, k):
     Okapi_TF_scores = collections.defaultdict(lambda:0.0)
@@ -141,6 +142,7 @@ def search(query, k):
     Okapi_BM25_socres = collections.defaultdict(lambda:0.0)
     Laplace_scores = collections.defaultdict(lambda:0.0)
     Jelinek_Mercer_scores = collections.defaultdict(lambda:0.0)
+    # this search will iterate every item in query
     for item in query:
         if item in recentsearch:
             posting = recentsearch[item]
@@ -186,6 +188,8 @@ def search(query, k):
     # print scores
 # ----------------------------------------------------------
 def stringOperation(q):
+    # this function help to get the question, and also
+    # help to skip stop words
     query = q[q.find('Document'):len(q)-1]
     global stopwords
     i = len(query) - 1
@@ -213,6 +217,7 @@ def stringOperation(q):
     return result
 # ----------------------------------------------------------
 def getQuestion():
+    # read the question from file
     filecontent = indexing.readFile('./AP_DATA/query_desc.51-100.short.txt')
     questions = {}
     for q in filecontent:
@@ -227,6 +232,7 @@ def getQuestion():
     return questions
 # ----------------------------------------------------------
 def outputFormat(container, result, temp):
+    # this function is used to give the right output format
     i = 1
     for r in result:
         temp_ = temp
@@ -234,12 +240,19 @@ def outputFormat(container, result, temp):
         container.append(temp_)
         i += 1
     return container
+# ----------------------------------------------------------
 def writeFile(container, filename):
+    # this function is used to write result to the file
     f = open(filename, 'w')
     for content in container:
         f.writelines(content)
     f.close()
+# ----------------------------------------------------------
 def doSearch():
+    # this function is used to get query from the query list
+    # and send the query to the search function, when
+    # get which is the right document, the function will
+    # call function to write result to the file
     questions = getQuestion()
     Okapi_TF = []
     TF_IDF = []
@@ -261,7 +274,10 @@ def doSearch():
     writeFile(Okapi_BM25, 'Okapi_BM25')
     writeFile(Laplace_smoothing, 'Laplace_smoothing')
     writeFile(Jelinek_Mercer, 'Jelinek_Mercer')
+# ----------------------------------------------------------
 def getNeededInformationFromFile():
+    # get necessary information, like total documents length,
+    # V of the total documents from cached data
     f = open('cache', 'r')
     global V
     global average
@@ -282,7 +298,7 @@ def getNeededInformationFromFile():
         docno = line[0]
         length = int(line[1])
         document_length[docno] = length
-
+# ----------------------------------------------------------
 def main():
     getStopwords()
     print 'get D, V, average document length'
@@ -291,8 +307,10 @@ def main():
         getNeededInformationFromFile()
     else:
         cache_data.cache()
+        getNeededInformationFromFile()
     print D, V, average
     print 'start to perform search'
     doSearch()
+# ----------------------------------------------------------
 if __name__ == '__main__':
     main()
