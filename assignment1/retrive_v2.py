@@ -117,7 +117,7 @@ def getPostings(keyword):
     result = es.search(index = 'ap_dataset', doc_type = 'document',
         body = {
         'query' : {
-        'match_phrase':{
+        'match':{
         'text':{'query':keyword}
         }
         },
