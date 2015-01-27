@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/local/bin/python
 import os, math, sys, urllib, urllib2
 import json
 import collections
@@ -10,11 +10,6 @@ es = Elasticsearch()
 
 # ----------------------------------------------------------
 # data definition
-stopwords = {}
-def getStopwords():
-    stopword_list = open('./AP_DATA/stoplist.txt','r')
-    for line in stopword_list:
-        stopwords[line] = 1
 
 recentsearch = {}
 D = es.count(index = 'ap_dataset')['count'] # D is the total number of documents
@@ -123,11 +118,14 @@ def getPostings(keyword):
         body = {
         'query' : {
         'match':{
-        'text':{'query':keyword}
+        'text':keyword
         }
         },
+        # 'sort':'_id',
         'explain' : 'true',
-        'size' : 85000})
+        'size' : 10000})
+       # q = 'text:'+keyword, size = 10000, explain = True)
+    # print result
     info = getInformation(keyword, result)
     return info
 # ----------------------------------------------------------
@@ -187,35 +185,6 @@ def search(query, k):
     Jelinek_Mercer_scores]
     # print scores
 # ----------------------------------------------------------
-def stringOperation(q):
-    # this function help to get the question, and also
-    # help to skip stop words
-    query = q[q.find('Document'):len(q)-1]
-    global stopwords
-    i = len(query) - 1
-    last = len(query) - 1
-    while i > 0:
-        if query[i].isalpha() == False:
-            i -= 1
-            continue
-        last = i
-        break
-    query = query[0:last+1]
-    query = query.split(' ')
-    length = len(query)
-    query = query[3:length]
-    # skip stop words
-    result = []
-    for item in query:
-        if item == '' or item == ' ':
-            continue
-        if item +'\n' in stopwords:
-            continue
-        if item[-1:].isalpha() == False and item[:-1]+'\n' in stopwords:
-            continue
-        result.append(item)
-    return result
-# ----------------------------------------------------------
 def getQuestion():
     # read the question from file
     filecontent = indexing.readFile('./AP_DATA/query_desc.51-100.short.txt')
@@ -223,12 +192,14 @@ def getQuestion():
     for q in filecontent:
         if 'Document' not in q:
             continue
+        print q
         # get the question number
         num = q.split(' ')[0]
         num = num[0:len(num)-1]
-        # get the query
-        query = stringOperation(q)
-        questions[num]=query
+        query = es.indices.analyze(index = 'ap_dataset', analyzer = 'my_english',
+            text = q[len(num)+1:])
+        query = [str(item['token']) for item in query['tokens']]
+        questions[num]=query[3:]
     return questions
 # ----------------------------------------------------------
 def outputFormat(container, result, temp):
@@ -300,7 +271,6 @@ def getNeededInformationFromFile():
         document_length[docno] = length
 # ----------------------------------------------------------
 def main():
-    getStopwords()
     print 'get D, V, average document length'
     # getNeededInformation()
     if os.path.exists('./cache'):
