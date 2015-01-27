@@ -10,7 +10,12 @@ es = Elasticsearch()
 
 # ----------------------------------------------------------
 # data definition
-stopwords = indexing.readFile('./AP_DATA/stoplist.txt')
+stopwords = {}
+def getStopwords():
+    stopword_list = open('./AP_DATA/stoplist.txt','r')
+    for line in stopword_list:
+        stopwords[line] = 1
+
 recentsearch = {}
 D = es.count(index = 'ap_dataset')['count'] # D is the total number of documents
 K = 100                        # K is the number of documents should be returned
@@ -31,7 +36,6 @@ def getInformation(keyword, result):
     num = 0
     for hit in result['hits']['hits']:
         the_id = hit['_id'].encode('UTF-8')
-        term = es.termvector(index  ='ap_dataset', doc_type = 'document', id=the_id)
         docno = hit['_source']['docno'].encode('UTF-8')
         try:
             TARGET = re.compile('.*termFreq=(.*?)\'.*')
@@ -106,7 +110,7 @@ def getPostings(keyword):
         }
         },
         'explain' : 'true',
-        'size' : 1000})
+        'size' : 85000})
     info = getInformation(keyword, result)
     return info
 # ----------------------------------------------------------
@@ -149,14 +153,15 @@ def search(query, k):
     Okapi_TF_scores = sort(Okapi_TF_scores, k)
     TF_IDF_scores = sort(TF_IDF_scores, k)
     Okapi_BM25_socres = sort(Okapi_BM25_socres, k)
-    Laplace_scores = sort1(Laplace_scores, k)
-    Jelinek_Mercer_scores = sort1(Jelinek_Mercer_scores, k)
+    Laplace_scores = sort(Laplace_scores, k)
+    Jelinek_Mercer_scores = sort(Jelinek_Mercer_scores, k)
     return [Okapi_TF_scores, TF_IDF_scores, Okapi_BM25_socres, Laplace_scores,
     Jelinek_Mercer_scores]
     # print scores
 # ----------------------------------------------------------
 def stringOperation(q):
     query = q[q.find('Document'):len(q)-1]
+    global stopwords
     i = len(query) - 1
     last = len(query) - 1
     while i > 0:
@@ -225,7 +230,7 @@ def doSearch():
         Okapi_BM25 = outputFormat(Okapi_BM25, result[2], temp)
         Laplace_smoothing = outputFormat(Laplace_smoothing, result[3], temp)
         Jelinek_Mercer = outputFormat(Jelinek_Mercer, result[4], temp)
-    writeFile(Okapi_TF, 'Okpai_TF')
+    writeFile(Okapi_TF, 'Okapi_TF')
     writeFile(TF_IDF, 'TF_IDF')
     writeFile(Okapi_BM25, 'Okapi_BM25')
     writeFile(Laplace_smoothing, 'Laplace_smoothing')
@@ -253,6 +258,7 @@ def getNeededInformationFromFile():
         document_length[docno] = length
 
 def main():
+    getStopwords()
     print 'get D, V, average document length'
     # getNeededInformation()
     if os.path.exists('./cache'):
