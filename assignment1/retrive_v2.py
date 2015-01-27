@@ -93,11 +93,23 @@ def Laplace(d):
     p = (tf + 1) / (length + V)
     p = math.log10(p)
     return p
+def Laplace2(tf, length):
+    global V
+    p = (tf + 1) / float((length + V))
+    p = math.log10(p)
+    return p
 def Jelinek_Mercer(d, back_tf, back_len):
     f = 0.3
     tf = d.information['tf']
     length = d.information['document_length']
-    p = f * (tf / length) + (1 - f) * ((back_tf - tf) / (back_len -length))
+    # p = f * (tf / length) + (1 - f) * ((back_tf - tf) / (back_len -length))
+    p = f * (tf / length) + (1 - f) * (back_tf  / back_len)
+    p = math.log10(p)
+    return p
+def Jelinek_Mercer2(length, back_tf, back_len):
+    f = 0.3
+    tf = 0
+    p = f * (tf / length) + (1 - f) * (back_tf  / back_len)
     p = math.log10(p)
     return p
 # ----------------------------------------------------------
@@ -130,26 +142,40 @@ def search(query, k):
     Laplace_scores = collections.defaultdict(lambda:0.0)
     Jelinek_Mercer_scores = collections.defaultdict(lambda:0.0)
     for item in query:
-        if item not in recentsearch.keys():
+        if item in recentsearch:
+            posting = recentsearch[item]
+        else:
             posting = getPostings(item)
             recentsearch[item] = posting
-        else:
-            posting = recentsearch[item]
         # term frequency in query
         freq = termFrequencyInQuery(item, query)
         tf = 0.0
         length = 0.0
+        hit = {}
+        enter = False
         for doc in posting:
             docno = doc.information['docno']
+            hit[docno] = 1
             Okapi_TF_scores[docno] += Okapi_TF(doc)
             TF_IDF_scores[docno] += TF_IDF(doc)
             Okapi_BM25_socres[docno] += Okapi_BM25(freq, doc)
             Laplace_scores[docno] += Laplace(doc)
             tf += doc.information['tf']
             length += doc.information['document_length']
+        for doc in document_length:
+            if doc in hit:
+                continue
+            Laplace_scores[doc] += Laplace2(0, int(document_length[doc]))
         for doc in posting:
             docno = doc.information['docno']
             Jelinek_Mercer_scores[docno] += Jelinek_Mercer(doc, tf, length)
+            enter = True
+        for doc in document_length:
+            if enter == False:
+                break
+            if doc in hit:
+                continue
+            Jelinek_Mercer_scores[doc] += Jelinek_Mercer2(int(document_length[doc]), tf, length)
     Okapi_TF_scores = sort(Okapi_TF_scores, k)
     TF_IDF_scores = sort(TF_IDF_scores, k)
     Okapi_BM25_socres = sort(Okapi_BM25_socres, k)
