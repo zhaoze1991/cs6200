@@ -99,7 +99,7 @@ def Laplace2(tf, length):
     return p
 # ----------------------------------------------------------
 def Jelinek_Mercer(d, back_tf, back_len):
-    f = 0.3
+    f = 0.9
     tf = d.information['tf']
     length = d.information['document_length']
     p = f * (tf / length) + (1 - f) * (back_tf  / back_len)
@@ -107,7 +107,7 @@ def Jelinek_Mercer(d, back_tf, back_len):
     return p
 def Jelinek_Mercer2(length, back_tf, back_len):
     # handle when the document was not hit
-    f = 0.3
+    f = 0.9
     tf = 0
     p = f * (tf / length) + (1 - f) * (back_tf  / back_len)
     p = math.log10(p)
@@ -121,17 +121,15 @@ def getPostings(keyword):
         'text':keyword
         }
         },
-        # 'sort':'_id',
         'explain' : 'true',
         'size' : 10000})
-       # q = 'text:'+keyword, size = 10000, explain = True)
     # print result
     info = getInformation(keyword, result)
     return info
 # ----------------------------------------------------------
 def sort(data, k):
     # sort the dictionary, and return the first k pairs
-   result = sorted(data.items(), key=lambda x:(-x[1],x[0]))
+   result = sorted(data.items(), key=lambda x:(-x[1]))
    return list(islice(result, k))
 # ----------------------------------------------------------
 def search(query, k):
@@ -152,7 +150,6 @@ def search(query, k):
         tf = 0.0
         length = 0.0
         hit = {}
-        enter = False
         for doc in posting:
             docno = doc.information['docno']
             hit[docno] = 1
@@ -166,16 +163,10 @@ def search(query, k):
             if doc in hit:
                 continue
             Laplace_scores[doc] += Laplace2(0, int(document_length[doc]))
+            Jelinek_Mercer_scores[doc] += Jelinek_Mercer2(int(document_length[doc]), tf, length)
         for doc in posting:
             docno = doc.information['docno']
             Jelinek_Mercer_scores[docno] += Jelinek_Mercer(doc, tf, length)
-            enter = True
-        for doc in document_length:
-            if enter == False:
-                break
-            if doc in hit:
-                continue
-            Jelinek_Mercer_scores[doc] += Jelinek_Mercer2(int(document_length[doc]), tf, length)
     Okapi_TF_scores = sort(Okapi_TF_scores, k)
     TF_IDF_scores = sort(TF_IDF_scores, k)
     Okapi_BM25_socres = sort(Okapi_BM25_socres, k)
@@ -183,23 +174,23 @@ def search(query, k):
     Jelinek_Mercer_scores = sort(Jelinek_Mercer_scores, k)
     return [Okapi_TF_scores, TF_IDF_scores, Okapi_BM25_socres, Laplace_scores,
     Jelinek_Mercer_scores]
-    # print scores
 # ----------------------------------------------------------
 def getQuestion():
     # read the question from file
     filecontent = indexing.readFile('./AP_DATA/query_desc.51-100.short.txt')
-    questions = {}
+    questions = []
     for q in filecontent:
         if 'Document' not in q:
             continue
-        print q
-        # get the question number
         num = q.split(' ')[0]
         num = num[0:len(num)-1]
         query = es.indices.analyze(index = 'ap_dataset', analyzer = 'my_english',
             text = q[len(num)+1:])
         query = [str(item['token']) for item in query['tokens']]
-        questions[num]=query[3:]
+        num = int(num)
+        que = {}
+        que[num] = query[3:]
+        questions.append(que)
     return questions
 # ----------------------------------------------------------
 def outputFormat(container, result, temp):
@@ -224,22 +215,23 @@ def doSearch():
     # and send the query to the search function, when
     # get which is the right document, the function will
     # call function to write result to the file
-    questions = getQuestion()
+    q = getQuestion()
     Okapi_TF = []
     TF_IDF = []
     Okapi_BM25 = []
     Laplace_smoothing = []
     Jelinek_Mercer = []
-    for index in questions:
-        print 'search ', questions[index]
-        temp = ''
-        temp += index + ' Q0 '
-        result = search(questions[index], K)
-        Okapi_TF = outputFormat(Okapi_TF, result[0], temp)
-        TF_IDF = outputFormat(TF_IDF, result[1], temp)
-        Okapi_BM25 = outputFormat(Okapi_BM25, result[2], temp)
-        Laplace_smoothing = outputFormat(Laplace_smoothing, result[3], temp)
-        Jelinek_Mercer = outputFormat(Jelinek_Mercer, result[4], temp)
+    for questions in q:
+        for index in questions:
+            print 'search ', questions[index]
+            temp = ''
+            temp += str(index) + ' Q0 '
+            result = search(questions[index], K)
+            Okapi_TF = outputFormat(Okapi_TF, result[0], temp)
+            TF_IDF = outputFormat(TF_IDF, result[1], temp)
+            Okapi_BM25 = outputFormat(Okapi_BM25, result[2], temp)
+            Laplace_smoothing = outputFormat(Laplace_smoothing, result[3], temp)
+            Jelinek_Mercer = outputFormat(Jelinek_Mercer, result[4], temp)
     writeFile(Okapi_TF, 'Okapi_TF')
     writeFile(TF_IDF, 'TF_IDF')
     writeFile(Okapi_BM25, 'Okapi_BM25')
