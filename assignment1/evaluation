@@ -1,25 +1,25 @@
 Okapi TF
-Average precision                           0.1197
-Precision  At   10 docs:                    0.2920
-Precision  At   30 docs:                    0.2420
+Average precision                           0.1207
+Precision  At   10 docs:                    0.2880
+Precision  At   30 docs:                    0.2240
 
 TF-IDF
-Average precision                           0.1759
-Precision  At   10 docs:                    0.3240
-Precision  At   30 docs:                    0.2680
+Average precision                           0.1898
+Precision  At   10 docs:                    0.3560
+Precision  At   30 docs:                    0.3013
 
 Okapi BM25
-Average precision                           0.1776
-Precision  At   10 docs:                    0.3200
-Precision  At   30 docs:                    0.2613
+Average precision                           0.1783
+Precision  At   10 docs:                    0.3320
+Precision  At   30 docs:                    0.2667
 
 Unigram LM with Laplace smoothing
-Average precision                           0.1248
-Precision  At   10 docs:                    0.3160
-Precision  At   30 docs:                    0.2480
+Average precision                           0.1285
+Precision  At   10 docs:                    0.3040
+Precision  At   30 docs:                    0.2520
 
 Unigram LM with Jelinek-Mercer smoothing
-Average precision                           0.1083
-Precision  At   10 docs:                    0.2600
-Precision  At   30 docs:                    0.1960
+Average precision                           0.1561
+Precision  At   10 docs:                    0.2760
+Precision  At   30 docs:                    0.2493
 

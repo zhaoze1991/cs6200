@@ -17,6 +17,7 @@ K = 100                        # K is the number of documents should be returned
 V = 10000000
 average = 200.0
 document_length = {}
+TOTAL_DOCUMENT_LENGTH = 0
 class Document(object):
     """docstring for Document"""
     def __init__(self, the_id, info):
@@ -92,25 +93,28 @@ def Laplace(d):
     p = math.log10(p)
     return p
 def Laplace2(tf, length):
-    # handle when the document was not hit
+    # handle when the document was not hit tf = 0
     global V
     p = (tf + 1) / float((length + V))
     p = math.log10(p)
     return p
 # ----------------------------------------------------------
-def Jelinek_Mercer(d, back_tf, back_len):
-    f = 0.9
+def Jelinek_Mercer(d, back_tf):
+    f = 0.37
     tf = d.information['tf']
     length = d.information['document_length']
-    p = f * (tf / length) + (1 - f) * (back_tf  / back_len)
+    p = f * (tf / length) + (1 - f) * (back_tf  / TOTAL_DOCUMENT_LENGTH)
     p = math.log10(p)
     return p
-def Jelinek_Mercer2(length, back_tf, back_len):
+def Jelinek_Mercer2(length, back_tf):
     # handle when the document was not hit
-    f = 0.9
+    f = 0.37
     tf = 0
-    p = f * (tf / length) + (1 - f) * (back_tf  / back_len)
-    p = math.log10(p)
+    p = f * (tf / length) + (1 - f) * (back_tf  / TOTAL_DOCUMENT_LENGTH)
+    try:
+        p = math.log10(p)
+    except ValueError:
+        return p
     return p
 # ----------------------------------------------------------
 def getPostings(keyword):
@@ -148,7 +152,6 @@ def search(query, k):
         # term frequency in query
         freq = termFrequencyInQuery(item, query)
         tf = 0.0
-        length = 0.0
         hit = {}
         for doc in posting:
             docno = doc.information['docno']
@@ -158,15 +161,18 @@ def search(query, k):
             Okapi_BM25_socres[docno] += Okapi_BM25(freq, doc)
             Laplace_scores[docno] += Laplace(doc)
             tf += doc.information['tf']
-            length += doc.information['document_length']
         for doc in document_length:
             if doc in hit:
                 continue
             Laplace_scores[doc] += Laplace2(0, int(document_length[doc]))
-            Jelinek_Mercer_scores[doc] += Jelinek_Mercer2(int(document_length[doc]), tf, length)
+            try:
+                Jelinek_Mercer_scores[doc] += Jelinek_Mercer2(int(document_length[doc]), tf)
+            except ZeroDivisionError:
+                continue
+        # we need total tf before we do jelinek
         for doc in posting:
             docno = doc.information['docno']
-            Jelinek_Mercer_scores[docno] += Jelinek_Mercer(doc, tf, length)
+            Jelinek_Mercer_scores[docno] += Jelinek_Mercer(doc, tf)
     Okapi_TF_scores = sort(Okapi_TF_scores, k)
     TF_IDF_scores = sort(TF_IDF_scores, k)
     Okapi_BM25_socres = sort(Okapi_BM25_socres, k)
@@ -193,6 +199,55 @@ def getQuestion():
         questions.append(que)
     return questions
 # ----------------------------------------------------------
+def stringOperation(q):
+    stopword_content = indexing.readFile('./AP_DATA/stoplist.txt')
+    stopwords = {}
+    for line in stopword_content:
+        stopwords[line] = 1
+    query = q[q.find('Document'):len(q)-1]
+    i = len(query) - 1
+    last = len(query) - 1
+    while i > 0:
+        if query[i].isalpha() == False:
+            i -= 1
+            continue
+        last = i
+        break
+    query = query[0:last+1]
+    query = query.split(' ')
+    length = len(query)
+    query = query[3:length]
+    # skip stop words
+    result = []
+    for item in query:
+        if item == '' or item == ' ' or item == ',':
+            continue
+        if item +'\n' in stopwords:
+            continue
+        if item[-1:].isalpha() == False and item[:-1]+'\n' in stopwords:
+            continue
+        result.append(item)
+    return result
+# ----------------------------------------------------------
+def getQuestion_v2():
+    # note the manual.txt has a little change to get better precision
+    filecontent = indexing.readFile('./AP_DATA/query_desc.51-100.short_manual.txt')
+    questions = []
+    for q in filecontent:
+        if 'Document' not in q:
+            continue
+        # get the question number
+        num = q.split(' ')[0]
+        num = num[0:len(num)-1]
+        # get the query
+        query = stringOperation(q)
+        q = {}
+        q[num] = query
+        questions.append(q)
+        # questions[num]=query
+    return questions
+
+# ----------------------------------------------------------
 def outputFormat(container, result, temp):
     # this function is used to give the right output format
     i = 1
@@ -215,7 +270,8 @@ def doSearch():
     # and send the query to the search function, when
     # get which is the right document, the function will
     # call function to write result to the file
-    q = getQuestion()
+    # q = getQuestion()
+    q = getQuestion_v2()
     Okapi_TF = []
     TF_IDF = []
     Okapi_BM25 = []
@@ -254,6 +310,7 @@ def getNeededInformationFromFile():
     V = int(content[0])
     average = float(content[1])
     i = 2
+    total = 0
     for line in content:
         if 'AP' not in line:
             continue
@@ -261,6 +318,10 @@ def getNeededInformationFromFile():
         docno = line[0]
         length = int(line[1])
         document_length[docno] = length
+        total += length
+    global TOTAL_DOCUMENT_LENGTH
+    TOTAL_DOCUMENT_LENGTH = total
+
 # ----------------------------------------------------------
 def main():
     print 'get D, V, average document length'

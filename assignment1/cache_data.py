@@ -51,7 +51,7 @@ def cache():
     average = avg / n
     global V
     V =len(all_item)
-    save = open('cache2','w')
+    save = open('cache','w')
     save.writelines(str(V) +'\n')
     save.writelines(str(average) + '\n')
     for document_length in container:
