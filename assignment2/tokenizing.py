@@ -1,5 +1,5 @@
 #!/usr/local/bin/python
-import os, sys, re, collections
+import os, sys, re, collections, struct
 import glob
 import snowballstemmer
 import documents
@@ -41,6 +41,9 @@ def stem(word):
 
 def tokenizing(documents):
     global document_id
+    global hash_map
+    global df
+    global cf
     for document in documents:
         tf = {}
         words = {}
@@ -50,7 +53,6 @@ def tokenizing(documents):
         tokens = pattern.findall(content)
         result = []
         position = 1
-        print document_id
         id_term[document_id] = docno
         for t in tokens:
             t = t.lower()
@@ -91,15 +93,25 @@ def sort():
     result = sorted(hash_map.items(), key=lambda x: x[0])
     return result
 
-def writefile(fileName, content):
+
+def writefile_v2(fileName, content):
     cache = open(fileName, 'wa')
     category = open(fileName+'Category','wa')
     start = 0
+    # term, df, cf, list
     for block in content:
         # (term, blabla)
+        # print block
         term = block[0]
         string = term + space + str(df[term]) + space + str(cf[term]) + space
-        string += str(block[1]) + '\n'
+        for b in block[1]:
+            string += str(b) + space
+            for i in block[1][b]:
+                string += str(i) + space
+        # print string
+        # sys.exit(-1)
+        string = string[:-1]
+        string += '\n'
         cache.write(string)
         cate = term + space + str(start) + space + str(len(string)) + '\n'
         category.write(cate)
@@ -108,30 +120,56 @@ def writefile(fileName, content):
     category.close()
 
 
-
-
 def indexing():
     result = sort()
     if os.path.exists('cache1') == False:
-        writefile('cache1', result)
+        writefile_v2('cache1', result)
         return
     if os.path.exists('cache2') == False:
-        writefile('cache2', result)
-        # mergefile()
-        sys.exit(-1)
+        writefile_v2('cache2', result)
+        documents.mergefile()
+
+def cachemore():
+    global id_term
+    # result = sorted(id_term.items(), key=lambda x: x[0])
+    documentid = open('documentid','w')
+    for key in id_term:
+        content = str(key) + ' ' + id_term[key] + '\n'
+        documentid.write(content)
+
+def doIndex():
+    indexing()
+    global document_num
+    global hash_map
+    global df
+    global cf
+    hash_map = {}
+    df = {}
+    cf = {}
+    document_num = 0
+
+def main():
+    getFileName()
+    no = 1
+    global document_num
+    for f in files:
+        print no, document_num
+        no += 1
+        c = readFile(f)
+        document = documents.splitDoc(c)
+        size = len(document)
+        if document_num + size >= 1000:
+            doIndex()
+            # tokenizing(document)
+            # document_num += size
+        else:
+            document_num += size
+            tokenizing(document)
+    doIndex()
+    cachemore()
+
+if __name__ == '__main__':
+    main()
 
 
-getFileName()
-result = []
-for f in files:
-    c = readFile(f)
-    document = documents.splitDoc(c)
-    size = len(document)
-    if document_num + size >= 1000:
-        indexing()
-        document_num = 0
-        hash_map = {}
-        df = {}
-    else:
-        document_num += size
-        tokenizing(document)
+
