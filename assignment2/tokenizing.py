@@ -1,23 +1,30 @@
 #!/usr/local/bin/python
-import os, sys, re, collections, struct
+import os, sys, re, collections, struct, thread
 import glob
 import snowballstemmer
 import documents
 # data definition
 files = []
 path = './AP_DATA/ap89_collection/*'
-# term -> id
-term_id = {}
 # id -> term
 id_term = {}
 # term -> [(docno, position)]
 hash_map = {}
+hash_map_stem = {}
 space = ' '
 cf = {}
 df = {}
 vf = {}
 document_id = 0
 document_num = 0
+
+stoplist = {}
+
+def loadstoplist():
+    global stoplist
+    stop = open('stoplist.txt','r').readlines()
+    for word in stop:
+        stoplist[word[:-1]] = 1
 
 def getFileName():
     global files
@@ -39,7 +46,7 @@ def stem(word):
     word = stem.stemmer.stemWord(word)
     return word
 
-def tokenizing(documents):
+def token_non(documents):
     global document_id
     global hash_map
     global df
@@ -94,7 +101,7 @@ def sort():
     return result
 
 
-def writefile_v2(fileName, content):
+def writefile(fileName, content, stem, stop):
     cache = open(fileName, 'wa')
     category = open(fileName+'Category','wa')
     start = 0
@@ -119,14 +126,32 @@ def writefile_v2(fileName, content):
     cache.close()
     category.close()
 
-
-def indexing():
+def indexing(stem, stop):
     result = sort()
-    if os.path.exists('cache1') == False:
-        writefile_v2('cache1', result)
+    if os.path.exists('cache1_F_F') == False:
+        fileName = ''
+        if stem == False and stop == False:
+            fileName = 'cache1_F_F'
+        elif stem == False and stop == True:
+            fileName = 'cache1_F_T'
+        elif stem == True and stop == False:
+            fileName = 'cache1_T_F':
+        elif stem == True and stop == True:
+            fileName = 'cache1_T_T'
+        writefile(fileName, result)
+        print 'write cache1'
         return
-    if os.path.exists('cache2') == False:
-        writefile_v2('cache2', result)
+    if os.path.exists('cache2_F_F') == False:
+        fileName = ''
+        if stem == False and stop == False:
+            fileName = 'cache2_F_F'
+        elif stem == False and stop == True:
+            fileName = 'cache2_F_T'
+        elif stem == True and stop == False:
+            fileName = 'cache2_T_F':
+        elif stem == True and stop == True:
+            fileName = 'cache2_T_T'
+        writefile(fileName, result)
         documents.mergefile()
 
 def cachemore():
@@ -139,6 +164,10 @@ def cachemore():
 
 def doIndex():
     indexing()
+    thread.start_new_thread(indexing, (False, False))
+    thread.start_new_thread(indexing, (False, True))
+    thread.start_new_thread(indexing, (True, False))
+    thread.start_new_thread(indexing, (True, True))
     global document_num
     global hash_map
     global df
@@ -149,19 +178,19 @@ def doIndex():
     document_num = 0
 
 def main():
+    os.system('./clean.sh')
+    loadstoplist()
     getFileName()
-    no = 1
     global document_num
     for f in files:
-        print no, document_num
-        no += 1
         c = readFile(f)
         document = documents.splitDoc(c)
         size = len(document)
+        total += size
         if document_num + size >= 1000:
             doIndex()
-            # tokenizing(document)
-            # document_num += size
+            tokenizing(document)
+            document_num += size
         else:
             document_num += size
             tokenizing(document)
