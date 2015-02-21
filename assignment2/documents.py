@@ -1,6 +1,17 @@
 #!/usr/local/bin/python
 import os, sys
 space = ' '
+
+
+# read file by filename
+
+
+def read_file(filename):
+    f = open(filename, 'r')
+    content = f.readlines()
+    f.close()
+    return content
+
 def handleTemp(temp):
     # extract content from <TEXT> and void <TEXT>content</TEXT>
     start = temp.find('<TEXT>') + len('<TEXT>')
@@ -71,16 +82,16 @@ def getNumber(content):
             result.append(index)
             return result
 
-def mergefile():
+def mergefile(name):
     # data file
     print 'mergefile'
-    file1 = open('cache1','r')
-    file2 = open('cache2','r')
-    file3 = open('cache3','w')
-    cate3 = open('Category', 'w')
+    file1 = open('cache1_' + name,'r')
+    file2 = open('cache2_' + name,'r')
+    file3 = open('cache3_' + name, 'w')
+    cate3 = open('cache3_' + name + '_category', 'w')
     # category file
-    cate1 = open('cache1Category','r').readlines()
-    cate2 = open('cache2Category','r').readlines()
+    cate1 = open('cache1_' + name + '_category', 'r').readlines()
+    cate2 = open('cache2_' + name + '_category', 'r').readlines()
     ptr1 = 0
     ptr2 = 0
     start = 0
@@ -160,9 +171,9 @@ def mergefile():
     file2.close()
     file3.close()
     cate3.close()
-    os.remove('cache1')
-    os.remove('cache2')
-    os.remove('cache1Category')
-    os.remove('cache2Category')
-    os.rename('cache3','cache1')
-    os.rename('Category','cache1Category')
+    os.remove('cache1_' + name)
+    os.remove('cache2_' + name)
+    os.remove('cache1_' + name + '_category')
+    os.remove('cache2_' + name + '_category')
+    os.rename('cache3_' + name, 'cache1_' + name)
+    os.rename('cache3_' + name + '_category', 'cache1_' + name + '_category')

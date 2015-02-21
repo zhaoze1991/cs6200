@@ -4,10 +4,12 @@ import glob
 import snowballstemmer
 import documents
 # data definition
+# ------------------------------------------------------------
 files = []
 path = './AP_DATA/ap89_collection/*'
 # id -> term
 id_term = {}
+termid = 0
 # term -> [(docno, position)]
 hash_map = {}
 hash_map_stem = {}
@@ -17,7 +19,6 @@ df = {}
 vf = {}
 document_id = 0
 document_num = 0
-
 stoplist = {}
 
 def loadstoplist():
@@ -33,12 +34,7 @@ def getFileName():
     # remove readme from the file
     del files[-1]
 
-# read file by filename
-def readFile(fileName):
-    f = open(fileName, 'r')
-    content = f.readlines()
-    f.close()
-    return content
+
 
 def stem(word):
     # static variable
@@ -135,7 +131,7 @@ def indexing(stem, stop):
         elif stem == False and stop == True:
             fileName = 'cache1_F_T'
         elif stem == True and stop == False:
-            fileName = 'cache1_T_F':
+            fileName = 'cache1_T_F'
         elif stem == True and stop == True:
             fileName = 'cache1_T_T'
         writefile(fileName, result)
@@ -148,7 +144,7 @@ def indexing(stem, stop):
         elif stem == False and stop == True:
             fileName = 'cache2_F_T'
         elif stem == True and stop == False:
-            fileName = 'cache2_T_F':
+            fileName = 'cache2_T_F'
         elif stem == True and stop == True:
             fileName = 'cache2_T_T'
         writefile(fileName, result)
@@ -183,10 +179,9 @@ def main():
     getFileName()
     global document_num
     for f in files:
-        c = readFile(f)
+        c = documents.read_file(f)
         document = documents.splitDoc(c)
         size = len(document)
-        total += size
         if document_num + size >= 1000:
             doIndex()
             tokenizing(document)
