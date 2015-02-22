@@ -1,5 +1,6 @@
 #!/usr/local/bin/python
 import documents, indexing, collections, wtf
+import sys, os
 from itertools import islice
 stop_list = {}
 term_list = []
@@ -53,6 +54,7 @@ def dump_cache(entry, term):
     content = cache.read(cate[1]).split(' ')
     term.df = int(content[1])
     term.ttf = int(content[2])
+    # print term.df, term.ttf
     index = 3
     while index < len(content):
         doc_id = int(content[index])
@@ -150,6 +152,7 @@ def get_postings(entry, keyword):
             'docno': doc_info[0],
             'tf': term.document[doc_id],
             'df': term.df,
+            'ttf': term.ttf
         }
         d = Document(doc_id, temp)
         output.append(d)
@@ -166,18 +169,18 @@ def term_frequency_in_query(term, query):
 
 
 def search(entry, query, k):
-    Okapi_TF_scores = collections.defaultdict(lambda:0.0)
-    TF_IDF_scores = collections.defaultdict(lambda:0.0)
-    Okapi_BM25_socres = collections.defaultdict(lambda:0.0)
-    Laplace_scores = collections.defaultdict(lambda:0.0)
-    Jelinek_Mercer_scores = collections.defaultdict(lambda:0.0)
+    Okapi_TF_scores = collections.defaultdict(lambda: 0.0)
+    TF_IDF_scores = collections.defaultdict(lambda: 0.0)
+    Okapi_BM25_socres = collections.defaultdict(lambda: 0.0)
+    Laplace_scores = collections.defaultdict(lambda: 0.0)
+    Jelinek_Mercer_scores = collections.defaultdict(lambda: 0.0)
     # this search will iterate every item in query
     for item in query:
         posting = get_postings(entry, item)
         # term frequency in query
         freq = term_frequency_in_query(item, query)
-        tf = 0.0
         hit = {}
+        ttf = 0
         for doc in posting:
             docno = doc.information['docno']
             hit[doc.id] = 1
@@ -185,20 +188,14 @@ def search(entry, query, k):
             TF_IDF_scores[docno] += wtf.TF_IDF(doc, entry.average, entry.D)
             Okapi_BM25_socres[docno] += wtf.Okapi_BM25(freq, doc, entry.average, entry.D)
             Laplace_scores[docno] += wtf.Laplace(doc, entry.v)
-            tf += doc.information['tf']
+            ttf = float(doc.information['ttf'])
+            Jelinek_Mercer_scores[docno] += wtf.Jelinek_Mercer(doc, ttf, entry.tdl)
         for doc in entry.document:
             if doc in hit:
                 continue
             docno = entry.document[doc][0]
             Laplace_scores[docno] += wtf.Laplace2(0, int(entry.document[doc][1]), int(entry.v))
-            try:
-                Jelinek_Mercer_scores[docno] += wtf.Jelinek_Mercer2(int(entry.document[doc][1]), tf, int(entry.v))
-            except ZeroDivisionError:
-                continue
-       #  we need total tf before we do jelinek
-        for doc in posting:
-            docno = doc.information['docno']
-            Jelinek_Mercer_scores[docno] += wtf.Jelinek_Mercer(doc, tf, entry.tdl)
+            Jelinek_Mercer_scores[docno] += wtf.Jelinek_Mercer2(ttf, entry.tdl)
     Okapi_TF_scores = sort(Okapi_TF_scores, k)
     TF_IDF_scores = sort(TF_IDF_scores, k)
     Okapi_BM25_socres = sort(Okapi_BM25_socres, k)
@@ -206,7 +203,6 @@ def search(entry, query, k):
     Jelinek_Mercer_scores = sort(Jelinek_Mercer_scores, k)
     return [Okapi_TF_scores, TF_IDF_scores, Okapi_BM25_socres, Laplace_scores,
     Jelinek_Mercer_scores]
-
 
 def write_file(container, filename):
     # this function is used to write result to the file
@@ -243,20 +239,32 @@ def do_search(entry):
             Okapi_BM25 = output_format(Okapi_BM25, result[2], temp)
             Laplace_smoothing = output_format(Laplace_smoothing, result[3], temp)
             Jelinek_Mercer = output_format(Jelinek_Mercer, result[4], temp)
-    write_file(Okapi_TF, entry.name + 'Okapi_TF')
-    write_file(TF_IDF, entry.name + 'TF_IDF')
-    write_file(Okapi_BM25, entry.name + 'Okapi_BM25')
-    write_file(Laplace_smoothing, entry.name + 'Laplace_smoothing')
-    write_file(Jelinek_Mercer, entry.name + 'Jelinek_Mercer')
+    write_file(Okapi_TF, entry.name + '_Okapi_TF')
+    write_file(TF_IDF, entry.name + '_TF_IDF')
+    write_file(Okapi_BM25, entry.name + '_Okapi_BM25')
+    write_file(Laplace_smoothing, entry.name + '_Laplace_smoothing')
+    write_file(Jelinek_Mercer, entry.name + '_Jelinek_Mercer')
+
 
 def main():
     load_stop_list()
     ff = IndexEntry('ff', False, False)
     dump_info(ff)
     dump_category(ff)
-    # term = Term('sex')
-    # dump_cache(ff, term)
     do_search(ff)
+    ft = IndexEntry('ft', False, True)
+    dump_info(ft)
+    dump_category(ft)
+    do_search(ft)
+    tf = IndexEntry('tf', True, False)
+    dump_info(tf)
+    dump_category(tf)
+    do_search(tf)
+    tt = IndexEntry('tt', True, True)
+    dump_info(tt)
+    dump_category(tt)
+    do_search(tt)
 
 if __name__ == '__main__':
+    os.system('./remove_retrive.sh')
     main()

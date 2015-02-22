@@ -35,20 +35,23 @@ def Laplace2(tf, length, V):
 # ----------------------------------------------------------
 def Jelinek_Mercer(d, back_tf, TOTAL_DOCUMENT_LENGTH):
     f = 0.37
-    tf = d.information['tf']
-    length = d.information['document_length']
-    p = f * (tf / length) + (1 - f) * (back_tf  / TOTAL_DOCUMENT_LENGTH)
+    tf = float(d.information['tf'])
+    length = float(d.information['document_length'])
+    back_tf = float(back_tf)
+    TOTAL_DOCUMENT_LENGTH = float(TOTAL_DOCUMENT_LENGTH)
+    # p = f * float((tf)) / length)) + float((1 - f)) * float((back_tf  / TOTAL_DOCUMENT_LENGTH))
+    p = f * (tf / length) + (1 - f) * (back_tf / TOTAL_DOCUMENT_LENGTH)
     p = math.log10(p)
     return p
-def Jelinek_Mercer2(length, back_tf, TOTAL_DOCUMENT_LENGTH):
+def Jelinek_Mercer2(back_tf, TOTAL_DOCUMENT_LENGTH):
     # handle when the document was not hit
     f = 0.37
-    tf = 0
-    p = f * (tf / length) + (1 - f) * (back_tf  / TOTAL_DOCUMENT_LENGTH)
-    try:
-        p = math.log10(p)
-    except ValueError:
-        return p
+    # tf = 0
+    back_tf = float(back_tf)
+    TOTAL_DOCUMENT_LENGTH = float(TOTAL_DOCUMENT_LENGTH)
+    # p = float((1 - f)) * float((back_tf  / TOTAL_DOCUMENT_LENGTH))
+    p = (1 - f) * (back_tf / TOTAL_DOCUMENT_LENGTH)
+    p = math.log10(p)
     return p
 # ----------------------------------------------------------
 

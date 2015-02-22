@@ -1,0 +1,21 @@
+#!/bin/bash
+./trec_eval.pl  ./AP_DATA/qrels.adhoc.51-100.AP89.txt ff_Okapi_TF > ff_Okapi_TF_result
+./trec_eval.pl  ./AP_DATA/qrels.adhoc.51-100.AP89.txt ff_TF_IDF > ff_TF_IDF_result
+./trec_eval.pl  ./AP_DATA/qrels.adhoc.51-100.AP89.txt ff_Okapi_BM25 > ff_Okapi_BM25_result
+./trec_eval.pl  ./AP_DATA/qrels.adhoc.51-100.AP89.txt ff_Laplace_smoothing > ff_Laplace_smoothing_result
+./trec_eval.pl  ./AP_DATA/qrels.adhoc.51-100.AP89.txt ff_Jelinek_Mercer > ff_Jelinek_Mercer_result
+./trec_eval.pl  ./AP_DATA/qrels.adhoc.51-100.AP89.txt ft_Okapi_TF > ft_Okapi_TF_result
+./trec_eval.pl  ./AP_DATA/qrels.adhoc.51-100.AP89.txt ft_TF_IDF > ft_TF_IDF_result
+./trec_eval.pl  ./AP_DATA/qrels.adhoc.51-100.AP89.txt ft_Okapi_BM25 > ft_Okapi_BM25_result
+./trec_eval.pl  ./AP_DATA/qrels.adhoc.51-100.AP89.txt ft_Laplace_smoothing > ft_Laplace_smoothing_result
+./trec_eval.pl  ./AP_DATA/qrels.adhoc.51-100.AP89.txt ft_Jelinek_Mercer > ft_Jelinek_Mercer_result
+./trec_eval.pl  ./AP_DATA/qrels.adhoc.51-100.AP89.txt tf_Okapi_TF > tf_Okapi_TF_result
+./trec_eval.pl  ./AP_DATA/qrels.adhoc.51-100.AP89.txt tf_TF_IDF > tf_TF_IDF_result
+./trec_eval.pl  ./AP_DATA/qrels.adhoc.51-100.AP89.txt tf_Okapi_BM25 > tf_Okapi_BM25_result
+./trec_eval.pl  ./AP_DATA/qrels.adhoc.51-100.AP89.txt tf_Laplace_smoothing > tf_Laplace_smoothing_result
+./trec_eval.pl  ./AP_DATA/qrels.adhoc.51-100.AP89.txt tf_Jelinek_Mercer > tf_Jelinek_Mercer_result
+./trec_eval.pl  ./AP_DATA/qrels.adhoc.51-100.AP89.txt tt_Okapi_TF > tt_Okapi_TF_result
+./trec_eval.pl  ./AP_DATA/qrels.adhoc.51-100.AP89.txt tt_TF_IDF > tt_TF_IDF_result
+./trec_eval.pl  ./AP_DATA/qrels.adhoc.51-100.AP89.txt tt_Okapi_BM25 > tt_Okapi_BM25_result
+./trec_eval.pl  ./AP_DATA/qrels.adhoc.51-100.AP89.txt tt_Laplace_smoothing > tt_Laplace_smoothing_result
+./trec_eval.pl  ./AP_DATA/qrels.adhoc.51-100.AP89.txt tt_Jelinek_Mercer > tt_Jelinek_Mercer_result

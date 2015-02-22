@@ -3,3 +3,11 @@
 *AP89_DATA.zip
 *.pyc
 .idea/*
+assignment2/*_result
+assignment2/cache1_*
+assignment2/tt_*
+assignment2/ff_*
+assignment2/tf_*
+assignment2/ft_*
+assignment2/info_*
+assignment2/trec_eval.pl

@@ -1,6 +1,6 @@
 #!/usr/local/bin/python
 import os, sys, re,  glob, Stemmer, documents
-
+import time
 stop_list = {}
 space = ' '
 newline = '\n'
@@ -37,22 +37,23 @@ def tokenizing(entry, docs, stems, stop):
         doc_no = d[0]
         entry.documents[entry.document_id] = doc_no
         content = d[1]
-        pattern = re.compile('[0-9A-Za-z]+\w*(?:\.?\w+)*')
+        # pattern = re.compile('[0-9A-Za-z]+\w*(?:\.?\w+)*')
+        pattern = re.compile('\w*(?:\.?\w+)*')
         tokens = pattern.findall(content)
         for t in tokens:
             t = t.lower()
-            # i = 0
-            # # skip first _
-            # while i < len(t) and t[i] == '_':
-            #     i += 1
-            # t = t[i:]
+            i = 0
+            # skip first _
+            while i < len(t) and t[i] == '_':
+                i += 1
+            t = t[i:]
             if t == '':
                 continue
-            if stems:
-                t = stem(t)
             if stop:
                 if t in stop_list:
                     continue
+            if stems:
+                t = stem(t)
             if t in entry.term_id:
                 pass
             else:
@@ -91,6 +92,7 @@ def tokenizing(entry, docs, stems, stop):
                 entry.hash_map[w][entry.document_id] = tuples
         entry.doc_len[entry.document_id] = position
         entry.document_id += 1
+
 
 
 def stem(word):
