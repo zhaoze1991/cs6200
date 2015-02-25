@@ -45,6 +45,30 @@ class Term(object):
         self.document = {}  # document id -> tf
         self.df = 0
         self.ttf = 0
+        self.position = {}  # document id -> positions
+
+
+def dump_position(entry, term, docs):
+    cache = open('cache1_' + entry.name, 'r')
+    cate = entry.category[term.value]
+    cache.seek(cate[0])
+    content = cache.read(cate[1]).split(' ')
+    index = 3
+    while index < len(content):
+        doc_id = int(content[index])
+        docs[doc_id] = True
+        index += 1
+        tf = int(content[index])
+        index += 1
+        positions = []
+        last = index + tf
+        while index < last:
+            positions.append(int(content[index]))
+            index += 1
+        term.position[doc_id] = positions
+        pass
+    cache.close()
+    return docs
 
 
 def dump_cache(entry, term):
@@ -123,6 +147,7 @@ def sort(data, k):
     # sort the dictionary, and return the first k pairs
    result = sorted(data.items(), key=lambda x:(-x[1]))
    return list(islice(result, k))
+
 
 def get_questions(stem):
     file_content = documents.read_file('./AP_DATA/query_desc.51-100.short_manual.txt')
@@ -204,12 +229,14 @@ def search(entry, query, k):
     return [Okapi_TF_scores, TF_IDF_scores, Okapi_BM25_socres, Laplace_scores,
     Jelinek_Mercer_scores]
 
+
 def write_file(container, filename):
     # this function is used to write result to the file
     f = open(filename, 'w')
     for content in container:
         f.writelines(content)
     f.close()
+
 
 def output_format(container, result, temp):
     # this function is used to give the right output format
@@ -221,6 +248,33 @@ def output_format(container, result, temp):
         i += 1
     return container
 
+
+def new_search(entry, questions, K):
+    proximity = collections.defaultdict(lambda: 0.0)
+    item_list = []
+    docs = {}
+    for item in questions:
+        it = Term(item)
+        dump_position(entry, it, docs)
+        item_list.append(it)
+    for doc in docs:
+        k = 0
+        matrix = []
+        s = 0
+        for it in item_list:
+            if doc in it.position:
+                k += 1
+                matrix.append(it.position[doc])
+        if k == 1:
+            continue
+        s = documents.get_min_span(matrix)
+        up = float(s - k) / k
+        proximity[entry.document[doc][0]] = 0.8 ** up
+    proximity = sort(proximity, K)
+    return [proximity]
+    pass
+
+
 def do_search(entry):
     q = get_questions(entry.stem)
     Okapi_TF = []
@@ -228,38 +282,45 @@ def do_search(entry):
     Okapi_BM25 = []
     Laplace_smoothing = []
     Jelinek_Mercer = []
+    proximity = []
     for questions in q:
         for index in questions:
             print 'search ', questions[index]
             temp = ''
             temp += str(index) + ' Q0 '
-            result = search(entry, questions[index], K)
-            Okapi_TF = output_format(Okapi_TF, result[0], temp)
-            TF_IDF = output_format(TF_IDF, result[1], temp)
-            Okapi_BM25 = output_format(Okapi_BM25, result[2], temp)
-            Laplace_smoothing = output_format(Laplace_smoothing, result[3], temp)
-            Jelinek_Mercer = output_format(Jelinek_Mercer, result[4], temp)
-    write_file(Okapi_TF, entry.name + '_Okapi_TF')
-    write_file(TF_IDF, entry.name + '_TF_IDF')
-    write_file(Okapi_BM25, entry.name + '_Okapi_BM25')
-    write_file(Laplace_smoothing, entry.name + '_Laplace_smoothing')
-    write_file(Jelinek_Mercer, entry.name + '_Jelinek_Mercer')
+            # result = search(entry, questions[index], K)
+            # Okapi_TF = output_format(Okapi_TF, result[0], temp)
+            # TF_IDF = output_format(TF_IDF, result[1], temp)
+            # Okapi_BM25 = output_format(Okapi_BM25, result[2], temp)
+            # Laplace_smoothing = output_format(Laplace_smoothing, result[3], temp)
+            # Jelinek_Mercer = output_format(Jelinek_Mercer, result[4], temp)
+            new_model = new_search(entry, questions[index], K)
+            proximity = output_format(proximity, new_model[0], temp)
+    # write_file(Okapi_TF, entry.name + '_Okapi_TF')
+    # write_file(TF_IDF, entry.name + '_TF_IDF')
+    # write_file(Okapi_BM25, entry.name + '_Okapi_BM25')
+    # write_file(Laplace_smoothing, entry.name + '_Laplace_smoothing')
+    # write_file(Jelinek_Mercer, entry.name + '_Jelinek_Mercer')
+    write_file(proximity, entry.name + '_Proximity_Search')
 
 
 def main():
     load_stop_list()
-    ff = IndexEntry('ff', False, False)
-    dump_info(ff)
-    dump_category(ff)
-    do_search(ff)
-    ft = IndexEntry('ft', False, True)
-    dump_info(ft)
-    dump_category(ft)
-    do_search(ft)
-    tf = IndexEntry('tf', True, False)
-    dump_info(tf)
-    dump_category(tf)
-    do_search(tf)
+    # ff = IndexEntry('ff', False, False)
+    # dump_info(ff)
+    # dump_category(ff)
+    # print 'ff do search'
+    # do_search(ff)
+    # sys.exit(-1)
+    # ft = IndexEntry('ft', False, True)
+    # dump_info(ft)
+    # dump_category(ft)
+    # print 'ft do search'
+    # do_search(ft)
+    # tf = IndexEntry('tf', True, False)
+    # dump_info(tf)
+    # dump_category(tf)
+    # do_search(tf)
     tt = IndexEntry('tt', True, True)
     dump_info(tt)
     dump_category(tt)

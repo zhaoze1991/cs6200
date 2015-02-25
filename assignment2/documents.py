@@ -1,5 +1,5 @@
 #!/usr/local/bin/python
-import os, sys
+import os, sys, time
 space = ' '
 
 
@@ -177,3 +177,55 @@ def mergefile(name):
     os.remove('cache2_' + name + '_category')
     os.rename('cache3_' + name, 'cache1_' + name)
     os.rename('cache3_' + name + '_category', 'cache1_' + name + '_category')
+
+
+def get_range(nums, move_able):
+    # return the range of the list, and return the index of the smallest number
+    small = 10000
+    next_val = 10000
+    next_index = 0
+    big = -1
+    index = 0
+    while index < len(nums):
+        num = nums[index][0]
+        if small > num:
+            small = num
+        if next_val > num and move_able[index]:
+            next_val = num
+            next_index = index
+        if big < num:
+            big = num
+        index += 1
+    return (next_index, big - small)
+
+
+def get_min_span(matirx):
+    # a matrix should be a list contains a lot of lists
+    if len(matirx) == 1:
+        return 0
+    column = []
+    row = len(matirx)
+    for i in range(row):
+        column.append([matirx[i][0], 0])
+    move_able = []
+    smallest = 10000
+    for i in range(row):
+        move_able.append(True)
+    while True in move_able:
+        next_move = get_range(column, move_able)
+        if next_move[1] + 1 == row:
+            smallest = next_move[1]
+            break
+        if smallest > next_move[1]:
+            smallest = next_move[1]
+        next_val = next_move[0]
+        column[next_val][1] += 1
+        if len(matirx[next_val]) <= column[next_val][1] + 1:
+            move_able[next_val] = False
+        if move_able[next_val]:
+            column[next_val][0] = matirx[next_val][column[next_val][1]]
+    if smallest == 10000:
+        print 'fuck'
+    # print matirx, smallest
+    return smallest
+    pass

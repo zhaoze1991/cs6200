@@ -4,7 +4,7 @@ import time
 stop_list = {}
 space = ' '
 newline = '\n'
-
+stemmer = Stemmer.Stemmer('english')
 
 class IndexEntry(object):
     """docstring for IndexEntry, we will have four IndexEntry"""
@@ -37,18 +37,18 @@ def tokenizing(entry, docs, stems, stop):
         doc_no = d[0]
         entry.documents[entry.document_id] = doc_no
         content = d[1]
-        # pattern = re.compile('[0-9A-Za-z]+\w*(?:\.?\w+)*')
-        pattern = re.compile('\w*(?:\.?\w+)*')
+        pattern = re.compile('[0-9A-Za-z]+\w*(?:\.?\w+)*')
+        # pattern = re.compile('\w*(?:\.?\w+)*')
         tokens = pattern.findall(content)
         for t in tokens:
             t = t.lower()
             i = 0
             # skip first _
-            while i < len(t) and t[i] == '_':
-                i += 1
-            t = t[i:]
-            if t == '':
-                continue
+            # while i < len(t) and t[i] == '_':
+                # i += 1
+            # t = t[i:]
+            # if t == '':
+                # continue
             if stop:
                 if t in stop_list:
                     continue
@@ -97,8 +97,8 @@ def tokenizing(entry, docs, stems, stop):
 
 def stem(word):
     # static variable
-    stem.stemmer = Stemmer.Stemmer('english')
-    word = stem.stemmer.stemWord(word)
+    # stem.stemmer = Stemmer.Stemmer('english')
+    word = stemmer.stemWord(word)
     return word
 
 
