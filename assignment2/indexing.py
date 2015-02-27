@@ -84,10 +84,12 @@ def tokenizing(entry, docs, stems, stop):
             else:
                 entry.df[w] = 1
             if w in entry.hash_map:
-                tuples = (tf[w], ) + tuple(words[w])
+                tuples = tuple(words[w])
+                tuples += tuple(':')
                 entry.hash_map[w][entry.document_id] = tuples
             else:
-                tuples = (tf[w],) + tuple(words[w])
+                tuples = tuple(words[w])
+                tuples += tuple(':')
                 entry.hash_map[w] = {}
                 entry.hash_map[w][entry.document_id] = tuples
         entry.doc_len[entry.document_id] = position
@@ -126,7 +128,7 @@ def write_file(entry, name):
     start = 0
     for block in result:
         term = block[0]
-        string = str(term) + space + str(entry.df[term]) + space + str(entry.ttf[term]) + space
+        string = str(entry.df[term]) + space + str(entry.ttf[term]) + space
         for b in block[1]:
             string += str(b) + space
             for i in block[1][b]:
@@ -207,9 +209,6 @@ def main():
             tokenizing(tf, document, True, False)
             tokenizing(tt, document, True, True)
             document_number += size
-        # debug purpose
-        # if count == 11:
-        #     break
     indexing(ff)
     indexing(ft)
     indexing(tf)

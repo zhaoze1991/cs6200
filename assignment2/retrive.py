@@ -53,10 +53,13 @@ def dump_position(entry, term, docs):
     cate = entry.category[term.value]
     cache.seek(cate[0])
     content = cache.read(cate[1]).split(' ')
-    index = 3
+    index = 2
     while index < len(content):
         doc_id = int(content[index])
-        docs[doc_id] = True
+        if doc_id in docs:
+            docs[doc_id] += 1
+        else:
+            docs[doc_id] = 1
         index += 1
         tf = int(content[index])
         index += 1
@@ -76,10 +79,10 @@ def dump_cache(entry, term):
     cate = entry.category[term.value]
     cache.seek(cate[0])
     content = cache.read(cate[1]).split(' ')
-    term.df = int(content[1])
-    term.ttf = int(content[2])
+    term.df = int(content[0])
+    term.ttf = int(content[1])
     # print term.df, term.ttf
-    index = 3
+    index = 2
     while index < len(content):
         doc_id = int(content[index])
         index += 1
@@ -145,9 +148,16 @@ def string_operation(q, stem):
 
 def sort(data, k):
     # sort the dictionary, and return the first k pairs
-   result = sorted(data.items(), key=lambda x:(-x[1]))
-   return list(islice(result, k))
+    result = sorted(data.items(), key=lambda x:(-x[1]))
+    return list(islice(result, k))
 
+
+def sort_v2(data, k):
+    kk = len(data)
+    if kk > k:
+        kk = k
+    result = sorted(data.items(), key=lambda x:(-x[1]))
+    return list(islice(result, kk))
 
 def get_questions(stem):
     file_content = documents.read_file('./AP_DATA/query_desc.51-100.short_manual.txt')
@@ -252,12 +262,22 @@ def output_format(container, result, temp):
 def new_search(entry, questions, K):
     proximity = collections.defaultdict(lambda: 0.0)
     item_list = []
+    # docs = collections.defaultdict(lambda: 0)
     docs = {}
-    for item in questions:
+    q = {}
+    res = []
+    for qq in questions:
+        if qq in q:
+            continue
+        res.append(qq)
+        q[qq] = True
+    for item in res:
         it = Term(item)
         dump_position(entry, it, docs)
         item_list.append(it)
     for doc in docs:
+        if docs[doc] < len(res):
+            continue
         k = 0
         matrix = []
         s = 0
@@ -265,12 +285,11 @@ def new_search(entry, questions, K):
             if doc in it.position:
                 k += 1
                 matrix.append(it.position[doc])
-        if k == 1:
-            continue
         s = documents.get_min_span(matrix)
+        print doc, matrix, s
         up = float(s - k) / k
         proximity[entry.document[doc][0]] = 0.8 ** up
-    proximity = sort(proximity, K)
+    proximity = sort_v2(proximity, K)
     return [proximity]
     pass
 
@@ -309,13 +328,10 @@ def main():
     # ff = IndexEntry('ff', False, False)
     # dump_info(ff)
     # dump_category(ff)
-    # print 'ff do search'
     # do_search(ff)
-    # sys.exit(-1)
     # ft = IndexEntry('ft', False, True)
     # dump_info(ft)
     # dump_category(ft)
-    # print 'ft do search'
     # do_search(ft)
     # tf = IndexEntry('tf', True, False)
     # dump_info(tf)

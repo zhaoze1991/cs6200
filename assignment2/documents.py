@@ -65,6 +65,10 @@ def getNumber(content):
     index = 0
     # first number, second number, and the position to be continue
     result = []
+    c = content.split(' ')
+    end = len(c[0]) + len(c[1]) + 2  # 2 space
+    result=[int(c[0]), int(c[1]), end]
+    return result
     size = len(content)
     while index < size:
         if content[index] == ' ':
@@ -128,12 +132,15 @@ def mergefile(name):
             result += t1 + space + str(start) + space
             file1.seek(int(line1[1]))
             content1 = file1.read(int(line1[2][:-1]))
+            # print content1
             space1 = getNumber(content1)
+            # print space1
+            # sys.exit(-1)
             file2.seek(int(line2[1]))
             content2 = file2.read(int(line2[2][:-1]))
             # print content2
             space2 = getNumber(content2)
-            data = t1 + space + str(space1[0] + space2[0]) + space
+            data = str(space1[0] + space2[0]) + space
             data += str(space1[1] + space2[1]) + space + content1[space1[2]:-1]
             data += space + content2[space2[2]:]
             file3.write(data)
@@ -214,18 +221,17 @@ def get_min_span(matirx):
     while True in move_able:
         next_move = get_range(column, move_able)
         if next_move[1] + 1 == row:
-            smallest = next_move[1]
+            smallest = next_move[1] + 1
             break
-        if smallest > next_move[1]:
-            smallest = next_move[1]
+        if smallest > next_move[1] + 1:
+            smallest = next_move[1] + 1
         next_val = next_move[0]
         column[next_val][1] += 1
         if len(matirx[next_val]) <= column[next_val][1] + 1:
             move_able[next_val] = False
         if move_able[next_val]:
             column[next_val][0] = matirx[next_val][column[next_val][1]]
-    if smallest == 10000:
-        print 'fuck'
     # print matirx, smallest
     return smallest
     pass
+
