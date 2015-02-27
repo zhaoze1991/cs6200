@@ -1,6 +1,6 @@
 #!/usr/local/bin/python
 import os, sys, re,  glob, Stemmer, documents
-import time
+import time, multiprocessing
 stop_list = {}
 space = ' '
 newline = '\n'
@@ -8,7 +8,7 @@ stemmer = Stemmer.Stemmer('english')
 
 class IndexEntry(object):
     """docstring for IndexEntry, we will have four IndexEntry"""
-    def __init__(self, name):
+    def __init__(self, name, stem, stop):
         super(IndexEntry, self).__init__()
         self.name = name
         self.hash_map = {}  # term, df, ttf, and storage block
@@ -21,6 +21,8 @@ class IndexEntry(object):
         self.id = 0
         self.documents = {} # id - > document
         self.document_id = 0
+        self.stem = stem
+        self.stop = stop
 
     def clean(self):
         self.hash_map = {}
@@ -84,12 +86,10 @@ def tokenizing(entry, docs, stems, stop):
             else:
                 entry.df[w] = 1
             if w in entry.hash_map:
-                tuples = tuple(words[w])
-                tuples += tuple(':')
+                tuples = (tf[w], ) + tuple(words[w])
                 entry.hash_map[w][entry.document_id] = tuples
             else:
-                tuples = tuple(words[w])
-                tuples += tuple(':')
+                tuples = (tf[w],) + tuple(words[w])
                 entry.hash_map[w] = {}
                 entry.hash_map[w][entry.document_id] = tuples
         entry.doc_len[entry.document_id] = position
@@ -171,16 +171,10 @@ def dump_info(entry):
     f.close()
 
 
-def main():
-    # clean the cached files
-    os.system('./clean.sh')
-    load_stop_list()
+def new_main(name, stem, stop):
     files = load_file_name()  # return all the file name
     document_number = 0
-    ff = IndexEntry('ff')
-    ft = IndexEntry('ft')
-    tf = IndexEntry('tf')
-    tt = IndexEntry('tt')
+    entry = IndexEntry(name, stem, stop)
     count = 0
     for f in files:
         content = documents.read_file(f)  # return the content by the file name
@@ -189,36 +183,24 @@ def main():
         print count
         size = len(document)
         if document_number + size >= 1000:
-            indexing(ff)
-            indexing(ft)
-            indexing(tf)
-            indexing(tt)
-            ff.clean()
-            ft.clean()
-            tf.clean()
-            tt.clean()
-            # sys.exit(-1)
+            indexing(entry)
+            entry.clean()
             document_number = size
-            tokenizing(ff, document, False, False)
-            tokenizing(ft, document, False, True)
-            tokenizing(tf, document, True, False)
-            tokenizing(tt, document, True, True)
+            tokenizing(entry, document, entry.stem, entry.stop)
         else:
-            tokenizing(ff, document, False, False)
-            tokenizing(ft, document, False, True)
-            tokenizing(tf, document, True, False)
-            tokenizing(tt, document, True, True)
+            tokenizing(entry, document, entry.stem, entry.stop)
             document_number += size
-    indexing(ff)
-    indexing(ft)
-    indexing(tf)
-    indexing(tt)
-    dump_info(ff)
-    dump_info(ft)
-    dump_info(tf)
-    dump_info(tt)
-    pass
+    indexing(entry)
+    dump_info(entry)
 
 
 if __name__ == '__main__':
-    main()
+    os.system('./clean.sh')
+    load_stop_list()
+    p_pool = multiprocessing.Pool()
+    p_pool.apply_async(new_main, args=('ff', False, False))
+    p_pool.apply_async(new_main, args=('ft', False, True))
+    p_pool.apply_async(new_main, args=('tf', True, False))
+    p_pool.apply_async(new_main, args=('tt', True, True))
+    p_pool.close()
+    p_pool.join()

@@ -1,5 +1,5 @@
 #!/usr/local/bin/python
-import documents, indexing, collections, wtf
+import documents, indexing, collections, wtf, multiprocessing
 import sys, os
 from itertools import islice
 stop_list = {}
@@ -286,7 +286,6 @@ def new_search(entry, questions, K):
                 k += 1
                 matrix.append(it.position[doc])
         s = documents.get_min_span(matrix)
-        print doc, matrix, s
         up = float(s - k) / k
         proximity[entry.document[doc][0]] = 0.8 ** up
     proximity = sort_v2(proximity, K)
@@ -307,41 +306,35 @@ def do_search(entry):
             print 'search ', questions[index]
             temp = ''
             temp += str(index) + ' Q0 '
-            # result = search(entry, questions[index], K)
-            # Okapi_TF = output_format(Okapi_TF, result[0], temp)
-            # TF_IDF = output_format(TF_IDF, result[1], temp)
-            # Okapi_BM25 = output_format(Okapi_BM25, result[2], temp)
-            # Laplace_smoothing = output_format(Laplace_smoothing, result[3], temp)
-            # Jelinek_Mercer = output_format(Jelinek_Mercer, result[4], temp)
+            result = search(entry, questions[index], K)
+            Okapi_TF = output_format(Okapi_TF, result[0], temp)
+            TF_IDF = output_format(TF_IDF, result[1], temp)
+            Okapi_BM25 = output_format(Okapi_BM25, result[2], temp)
+            Laplace_smoothing = output_format(Laplace_smoothing, result[3], temp)
+            Jelinek_Mercer = output_format(Jelinek_Mercer, result[4], temp)
             new_model = new_search(entry, questions[index], K)
             proximity = output_format(proximity, new_model[0], temp)
-    # write_file(Okapi_TF, entry.name + '_Okapi_TF')
-    # write_file(TF_IDF, entry.name + '_TF_IDF')
-    # write_file(Okapi_BM25, entry.name + '_Okapi_BM25')
-    # write_file(Laplace_smoothing, entry.name + '_Laplace_smoothing')
-    # write_file(Jelinek_Mercer, entry.name + '_Jelinek_Mercer')
+    write_file(Okapi_TF, entry.name + '_Okapi_TF')
+    write_file(TF_IDF, entry.name + '_TF_IDF')
+    write_file(Okapi_BM25, entry.name + '_Okapi_BM25')
+    write_file(Laplace_smoothing, entry.name + '_Laplace_smoothing')
+    write_file(Jelinek_Mercer, entry.name + '_Jelinek_Mercer')
     write_file(proximity, entry.name + '_Proximity_Search')
 
 
-def main():
-    load_stop_list()
-    # ff = IndexEntry('ff', False, False)
-    # dump_info(ff)
-    # dump_category(ff)
-    # do_search(ff)
-    # ft = IndexEntry('ft', False, True)
-    # dump_info(ft)
-    # dump_category(ft)
-    # do_search(ft)
-    # tf = IndexEntry('tf', True, False)
-    # dump_info(tf)
-    # dump_category(tf)
-    # do_search(tf)
-    tt = IndexEntry('tt', True, True)
-    dump_info(tt)
-    dump_category(tt)
-    do_search(tt)
+def new_main(name, stem, stop):
+    entry = IndexEntry(name, stem, stop)
+    dump_info(entry)
+    dump_category(entry)
+    do_search(entry)
 
 if __name__ == '__main__':
     os.system('./remove_retrive.sh')
-    main()
+    load_stop_list()
+    p_pool = multiprocessing.Pool()
+    p_pool.apply_async(new_main, args=('ff', False, False))
+    p_pool.apply_async(new_main, args=('ft', False, True))
+    p_pool.apply_async(new_main, args=('tf', True, False))
+    p_pool.apply_async(new_main, args=('tt', True, True))
+    p_pool.close()
+    p_pool.join()
