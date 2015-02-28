@@ -328,9 +328,23 @@ def new_main(name, stem, stop):
     dump_category(entry)
     do_search(entry)
 
+
+def new_test():
+    entry = IndexEntry('tt', True, True)
+    dump_info(entry)
+    dump_category(entry)
+    w = indexing.stem('mozambique')
+    print w
+    item = Term(w)
+    dump_cache(entry, item)
+    for id in item.document:
+        print entry.document[id][0]
+    pass
+
 if __name__ == '__main__':
     os.system('./remove_retrive.sh')
     load_stop_list()
+    # new_test()
     p_pool = multiprocessing.Pool()
     p_pool.apply_async(new_main, args=('ff', False, False))
     p_pool.apply_async(new_main, args=('ft', False, True))

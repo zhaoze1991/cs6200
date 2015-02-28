@@ -6,6 +6,7 @@ space = ' '
 newline = '\n'
 stemmer = Stemmer.Stemmer('english')
 
+
 class IndexEntry(object):
     """docstring for IndexEntry, we will have four IndexEntry"""
     def __init__(self, name, stem, stop):
