@@ -1,0 +1,87 @@
+Indexing, without stem and without stop words
+TF-IDF
+Average precision                           0.1554
+Precision  At   10 docs:                    0.3040
+Precision  At   30 docs:                    0.2693
+
+Okapi BM25
+Average precision                           0.1540
+Precision  At   10 docs:                    0.3040
+Precision  At   30 docs:                    0.2573
+
+Unigram LM with Jelinek-Mercer smoothing
+Average precision                           0.1367
+Precision  At   10 docs:                    0.2640
+Precision  At   30 docs:                    0.2253
+
+Proximity Search
+Average precision                           0.0457
+Precision  At   10 docs:                    0.1800
+Precision  At   30 docs:                    0.0667
+
+--------------------------------------------------------------------------------
+Indexing, without stem, but with stop words
+TF-IDF
+Average precision                           0.1522
+Precision  At   10 docs:                    0.2840
+Precision  At   30 docs:                    0.2680
+
+Okapi BM25
+Average precision                           0.1520
+Precision  At   10 docs:                    0.2920
+Precision  At   30 docs:                    0.2520
+
+Unigram LM with Jelinek-Mercer smoothing
+Average precision                           0.1327
+Precision  At   10 docs:                    0.2560
+Precision  At   30 docs:                    0.2253
+
+Proximity Search
+Average precision                           0.0494
+Precision  At   10 docs:                    0.1800
+Precision  At   30 docs:                    0.0667
+
+--------------------------------------------------------------------------------
+Indexing, with stem but without stop words
+TF-IDF
+Average precision                           0.1994
+Precision  At   10 docs:                    0.3800
+Precision  At   30 docs:                    0.3280
+
+Okapi BM25
+Average precision                           0.1913
+Precision  At   10 docs:                    0.3320
+Precision  At   30 docs:                    0.3013
+
+Unigram LM with Jelinek-Mercer smoothing
+Average precision                           0.1659
+Precision  At   10 docs:                    0.3200
+Precision  At   30 docs:                    0.2693
+
+Proximity Search
+Average precision                           0.0332
+Precision  At   10 docs:                    0.1556
+Precision  At   30 docs:                    0.0630
+--------------------------------------------------------------------------------
+Indexing, with stem and stop words
+TF-IDF
+Average precision                           0.1994
+Precision  At   10 docs:                    0.3800
+Precision  At   30 docs:                    0.3280
+
+Okapi BM25
+Average precision                           0.1880
+Precision  At   10 docs:                    0.3400
+Precision  At   30 docs:                    0.2893
+
+Unigram LM with Jelinek-Mercer smoothing
+Average precision                           0.1632
+Precision  At   10 docs:                    0.2960
+Precision  At   30 docs:                    0.2653
+
+Proximity Search
+Average precision                           0.0364
+Precision  At   10 docs:                    0.1556
+Precision  At   30 docs:                    0.0630
+
+

@@ -341,6 +341,7 @@ def new_test():
         print entry.document[id][0]
     pass
 
+
 if __name__ == '__main__':
     os.system('./remove_retrive.sh')
     load_stop_list()
