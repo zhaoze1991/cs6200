@@ -266,6 +266,7 @@ def new_search(entry, questions, K):
     docs = {}
     q = {}
     res = []
+    C = 1500
     for qq in questions:
         if qq in q:
             continue
@@ -276,8 +277,8 @@ def new_search(entry, questions, K):
         dump_position(entry, it, docs)
         item_list.append(it)
     for doc in docs:
-        if docs[doc] < len(res):
-            continue
+        # if docs[doc] < 2:
+        #     continue
         k = 0
         matrix = []
         s = 0
@@ -285,9 +286,14 @@ def new_search(entry, questions, K):
             if doc in it.position:
                 k += 1
                 matrix.append(it.position[doc])
-        s = documents.get_min_span(matrix)
-        up = float(s - k) / k
-        proximity[entry.document[doc][0]] = 0.8 ** up
+        s = 1
+        if k != 1:
+            s = documents.get_min_span(matrix)
+        # up = float(s - k) / k
+        # proximity[entry.document[doc][0]] = 0.8 ** up
+        score = float((C - s) * docs[doc])
+        score /= (entry.document[doc][1] + entry.v)
+        proximity[entry.document[doc][0]] = score
     proximity = sort_v2(proximity, K)
     return [proximity]
     pass

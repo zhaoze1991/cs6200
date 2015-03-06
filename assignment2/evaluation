@@ -15,9 +15,9 @@ Precision  At   10 docs:                    0.2640
 Precision  At   30 docs:                    0.2253
 
 Proximity Search
-Average precision                           0.0457
-Precision  At   10 docs:                    0.1800
-Precision  At   30 docs:                    0.0667
+Average precision                           0.0836
+Precision  At   10 docs:                    0.2164
+Precision  At   30 docs:                    0.1204
 
 --------------------------------------------------------------------------------
 Indexing, without stem, but with stop words
@@ -37,9 +37,9 @@ Precision  At   10 docs:                    0.2560
 Precision  At   30 docs:                    0.2253
 
 Proximity Search
-Average precision                           0.0494
-Precision  At   10 docs:                    0.1800
-Precision  At   30 docs:                    0.0667
+Average precision                           0.0861
+Precision  At   10 docs:                    0.2322
+Precision  At   30 docs:                    0.1204
 
 --------------------------------------------------------------------------------
 Indexing, with stem but without stop words
@@ -59,9 +59,9 @@ Precision  At   10 docs:                    0.3200
 Precision  At   30 docs:                    0.2693
 
 Proximity Search
-Average precision                           0.0332
-Precision  At   10 docs:                    0.1556
-Precision  At   30 docs:                    0.0630
+Average precision                           0.0790
+Precision  At   10 docs:                    0.2537
+Precision  At   30 docs:                    0.1108
 --------------------------------------------------------------------------------
 Indexing, with stem and stop words
 TF-IDF
@@ -80,8 +80,8 @@ Precision  At   10 docs:                    0.2960
 Precision  At   30 docs:                    0.2653
 
 Proximity Search
-Average precision                           0.0364
-Precision  At   10 docs:                    0.1556
-Precision  At   30 docs:                    0.0630
+Average precision                           0.0854
+Precision  At   10 docs:                    0.1960
+Precision  At   30 docs:                    0.1680
 
 
