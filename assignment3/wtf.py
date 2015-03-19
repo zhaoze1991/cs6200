@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 from collections import deque
 import collections
+import urllib2
+import requests
 
 class MyQueue(object):
     """docstring for MyQueue"""
@@ -43,4 +45,13 @@ class MyQueue(object):
                 self.queue.appendleft(next_element)
         return element
 
+def get_header(url):
+    resp = requests.head(url).headers
+    res = []
+    if 'content-language' in resp:
+        res.append(resp['content-language'])
+    else:
+        res.append('en')
+    res.append(resp['content-type'])
+    return res
 

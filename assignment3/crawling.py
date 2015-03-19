@@ -14,6 +14,7 @@ import wtf
 
 seeds = [
     'http://en.wikipedia.org/wiki/List_of_highest-grossing_films',
+    'http://www.imdb.com/boxoffice/alltimegross',
     'http://en.wikipedia.org/wiki/Avatar_(2009_film)',
     'http://www.imdb.com/title/tt0499549/'
 ]
@@ -91,7 +92,7 @@ hash_map = {}  # url -> Link,
 def get_header(urls):
     # return language and content type
     req = urllib2.Request(urls)
-    req.get_method = lambda: 'HEAD'
+    # req.get_method = lambda: 'HEAD'
     information = urllib2.urlopen(req).info()
     return [information.getheader('content-language'), information.getheader('content-type')]
 
@@ -116,7 +117,7 @@ def url_normalization(current_url, url):
 def write_to_file(docno, title, content):
     f.writelines('<DOC>\n')
     f.writelines('<DOCNO> ' + docno + ' </DOCNO>\n')
-    if len(title) != 0:
+    if title is not None:
         # todo may be there's bug
         f.writelines('<HEAD> ' + title + ' </HEAD>\n')
     f.writelines('<TEXT>\n')
@@ -149,18 +150,18 @@ def url_formatter(urls, link):
 def fetch_page(pre_domain, url):
     # todo change the check sequence
     urls = url.url
-    print urls, url.in_link,
-    if pre_domain == urlparse.urlparse(urls).hostname:
-        time.sleep(1)
+    print urls, url.in_link
+    # if pre_domain == urlparse.urlparse(urls).hostname:
+    #     time.sleep(1)
     if not check_crawler(urls):
         return
-    header = get_header(urls)
+    header = wtf.get_header(urls)
     if header[0] != 'en' or 'text/html' not in header[1]:
         return
     response = urllib2.urlopen(urls).read()  # this is the raw html
     soup = bs4.BeautifulSoup(response)
     links = []
-    title = soup.title.string
+    title = soup.title.string.encode('utf-8')
     clean_text = readability.clean_text(urls).encode('utf-8')
     write_to_file(urls, title, clean_text)
     for link in soup.find_all('a'):
@@ -168,7 +169,9 @@ def fetch_page(pre_domain, url):
         # TODO we can filter more
         if link is None:
             continue
-        temp = str(link)
+        temp = str(link.encode('utf-8'))
+        if len(temp) < 1:
+            continue
         if temp[0] == '#':
             continue
         temps = url_formatter(urls, temp)
@@ -195,6 +198,3 @@ if __name__ == '__main__':
         pre_domain = get_domain(element.url)
         pass
 
-
-
-print get_header('http://david.choffnes.com/classes/cs4700sp15/papers/tcp-sim.pdf')
