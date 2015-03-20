@@ -3,6 +3,30 @@ from collections import deque
 import collections
 import urllib2
 import requests
+import uuid
+import re
+import bs4
+
+
+def visible(element):
+    if element.parent.name in ['style', 'script', '[document]', 'head', 'title']:
+        return False
+    elif re.match('<!--.*-->', str(element)):
+        return False
+    return True
+
+# text = soup.findAll(text=True)
+def clean_text(text):
+    visible_text = filter(visible, text)
+    texts = ''
+    for item in visible_text:
+        texts += item.encode('utf-8')
+    return texts
+
+
+def url_to_uuid(url):
+    return str(uuid.uuid5(uuid.NAMESPACE_URL, url))
+    pass
 
 class MyQueue(object):
     """docstring for MyQueue"""

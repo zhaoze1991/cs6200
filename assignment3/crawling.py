@@ -164,6 +164,7 @@ def fetch_page(url):
         return
     soup = bs4.BeautifulSoup(response)
     title = soup.title.string.encode('utf-8')
+    clean_text = wtf.clean_text(soup.findAll(text=True))
     try:
         clean_text = readability.clean_text(urls).encode('utf-8')
     except:
@@ -176,7 +177,6 @@ def fetch_page(url):
     global counter
     counter += 1
     print counter
-    print response
     dump_to_es(urls, response, clean_text, header[2])
     # write_to_file(urls, title, clean_text)
     for link in soup.find_all('a'):
@@ -265,9 +265,5 @@ if __name__ == '__main__':
             link_map.writelines(links + ' ')
         link_map.writelines('\n')
 
-# update_es('http://en.wikipedia.org/wiki/List_of_highest-grossing_films',
-#     ['http://user.qzone.qq.com/561139302/myhome/353?via=QZ.MYAPP',
-#     'shit','http://elasticsearch-py.readthedocs.org/en/latest/api.html'],
-#     ['http://elasticsearch-py.readthedocs.org/en/latest/api.html', 'fuck'])
 
 
