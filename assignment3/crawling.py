@@ -11,16 +11,39 @@ import httplib
 from HTMLParser import HTMLParser
 import readability
 import wtf
+import socket
+from elasticsearch import Elasticsearch
+import uuid
+import sys
+reload(sys)
+sys.setdefaultencoding("utf-8")
 
+es = Elasticsearch()
+
+def dump_to_es(url, html, clean_text, header):
+    doc = {
+    'url':url,
+    'html':html,
+    'text':clean_text,
+    'header':header
+    }
+    es.index(index = 'hw3',
+        doc_type = 'document',
+        id = uuid.uuid5(uuid.NAMESPACE_URL, url),
+        body =doc
+        )
+    # print 'index'
+    pass
+
+counter = 0
 seeds = [
     'http://en.wikipedia.org/wiki/List_of_highest-grossing_films',
-    'http://www.imdb.com/boxoffice/alltimegross',
+    # 'http://www.imdb.com/boxoffice/alltimegross',
     'http://en.wikipedia.org/wiki/Avatar_(2009_film)',
     'http://www.imdb.com/title/tt0499549/'
 ]
 
 f = open('storage', 'w')
-
 
 class Link(object):
     """docstring for Link"""
@@ -31,6 +54,9 @@ class Link(object):
         self.out_link = 0
         self.visited = False
         self.round = 1
+        self.outs = []
+        self.ins = []
+        self.header = ''
 
 
 class IndexItem(object):
@@ -44,49 +70,10 @@ class IndexItem(object):
         self.out_link = []
 
 
-class MyQueue(object):
-    """docstring for MyQueue"""
-    def __init__(self):
-        super(MyQueue, self).__init__()
-        self.seeds = collections.deque()
-        self.queue = collections.deque()
-
-    def push_seeds(self, item):
-        self.seeds.append(item)
-
-    def push(self, item):
-        self.queue.append(item)
-
-    def empty(self):
-        if len(self.seeds) == 0 and len(self.queue) == 0:
-            return True
-        return False
-
-    def pop(self):
-        if len(self.seeds) > 0:
-            self.seeds = collections.deque(sorted(self.seeds, key = lambda x:-x.in_link))
-            return self.seeds.popleft()
-        self.queue = collections.deque(sorted(self.queue, key = lambda x:-x.in_link))
-        element = self.queue.popleft()
-        in_link = element.in_link
-        if len(self.queue) > 0:
-            next_element = self.queue.popleft()
-            if next_element.in_link == in_link:
-                temp_list = [element, next_element]
-                while next_element.in_link == in_link and len(self.queue) > 0:
-                     next_element = self.queue.popleft()
-                     temp_list.append(next_element)
-                temp_list = sorted(temp_list, key = lambda x : x.round)
-                res = temp_list[0]
-                temp_list.remove(res)
-                self.queue.extendleft(temp_list)
-                return res
-            else:
-                self.queue.appendleft(next_element)
-        return element
-
 q = wtf.MyQueue()
 hash_map = {}  # url -> Link,
+spam_map = {}  # url -> whatever, should store this to filter un-related document
+domain_time = {}  # domain -> last time visit
 
 
 def get_header(urls):
@@ -94,7 +81,7 @@ def get_header(urls):
     req = urllib2.Request(urls)
     # req.get_method = lambda: 'HEAD'
     information = urllib2.urlopen(req).info()
-    return [information.getheader('content-language'), information.getheader('content-type')]
+    return [information.getheader('content-language'), information.getheader('content-type'), information]
 
 
 def check_crawler(url):
@@ -147,54 +134,140 @@ def url_formatter(urls, link):
     pass
 
 
-def fetch_page(pre_domain, url):
+def sleep_function(url):
+    domain = get_domain(url)
+    if domain in domain_time:
+        lapsed = time.time() - domain_time[domain]
+        if lapsed < 1.0:
+            time.sleep(1.0 - lapsed)
+            domain_time[domain] = time.time()
+        else:
+            domain_time[domain] = time.time()
+    else:
+        domain_time[domain] = time.time()
+    pass
+
+
+def fetch_page(url):
     # todo change the check sequence
     urls = url.url
     print urls, url.in_link
-    # if pre_domain == urlparse.urlparse(urls).hostname:
-    #     time.sleep(1)
+    sleep_function(urls)
     if not check_crawler(urls):
+        return
+    try:
+        response = urllib2.urlopen(urls).read() # this is the raw html
+    except:
         return
     header = wtf.get_header(urls)
     if header[0] != 'en' or 'text/html' not in header[1]:
         return
-    response = urllib2.urlopen(urls).read()  # this is the raw html
     soup = bs4.BeautifulSoup(response)
-    links = []
     title = soup.title.string.encode('utf-8')
-    clean_text = readability.clean_text(urls).encode('utf-8')
-    write_to_file(urls, title, clean_text)
+    try:
+        clean_text = readability.clean_text(urls).encode('utf-8')
+    except:
+        return
+    # clean_text_low = clean_text.lower()
+    # print clean_text_low
+    # if 'film' not in clean_text_low and 'movie' not in clean_text_low:
+    #     spam_map[urls] = True
+    #     return
+    global counter
+    counter += 1
+    print counter
+    print response
+    dump_to_es(urls, response, clean_text, header[2])
+    # write_to_file(urls, title, clean_text)
     for link in soup.find_all('a'):
         link = link.get('href')
         # TODO we can filter more
         if link is None:
             continue
-        temp = str(link.encode('utf-8'))
+        temp = link.encode('utf-8')
         if len(temp) < 1:
             continue
         if temp[0] == '#':
             continue
         temps = url_formatter(urls, temp)
+        if temps in hash_map:
+            hash_map[temps].in_link += 1
+            hash_map[temps].ins.append(urls)
+            continue
         if '.jpg' in temps or '.JPG' in temps or '.png' in temps or '.PNG' in temps:
             continue
-        links.append(temps)
-    for link in links:
-        if link in hash_map:
-            hash_map[link].in_link += 1
+        if '.svg' in temps or '.SVG' in temps:
             continue
-        hash_map[link] = Link(link)
-        hash_map[link].round = url.round + 1
-        q.push(hash_map[link])
+        hash_map[temps] = Link(temps)
+        url.outs.append(temps)
+        hash_map[temps].round = url.round + 1
+        hash_map[temps].ins.append(urls)
+        q.push(hash_map[temps])
+
+
+def filter_mechanism(url):
+    if url in spam_map:
+        return True
+    temp_url = url.lower()
+    if 'film' in temp_url or 'movie' in temp_url:
+        return False
+    try:
+        sleep_function(url)
+        header = get_header(url)
+        if header[0] != 'en' or 'text/html' not in header[1]:
+            spam_map[url] = True
+            return True
+    except:
+        spam_map[url] = True
+        return True
+    spam_map[url] = True
+    return True
+    pass
+
+
+def update_es(url, ins, outs):
+    inns = ''
+    ouuts = ''
+    for i in ins:
+        inns += i + ' '
+    for i in outs:
+        ouuts += i + ' '
+    doc = {
+        'doc':{
+            'in-links': inns,
+            'out-links' : ouuts
+        }
+    }
+    # print doc
+    es.update(index = 'hw3',
+        id = str(uuid.uuid5(uuid.NAMESPACE_URL, url)),
+        doc_type = 'document',
+        body = doc
+        )
+    pass
 
 
 if __name__ == '__main__':
+    link_map = open('links', 'w')
+    global counter
     for seed in seeds:
         hash_map[seed] = Link(seed)
         q.push_seeds(hash_map[seed])
-    pre_domain = ''
-    while not q.empty():
+    while not q.empty() and counter < 5:
         element = q.pop()
-        fetch_page(pre_domain, element)
-        pre_domain = get_domain(element.url)
+        fetch_page(element)
         pass
+    for url in hash_map:
+        if len(hash_map[url].outs) < 1:
+            continue
+        link_map.writelines(url + ' ')
+        for links in hash_map[url].outs:
+            link_map.writelines(links + ' ')
+        link_map.writelines('\n')
+
+# update_es('http://en.wikipedia.org/wiki/List_of_highest-grossing_films',
+#     ['http://user.qzone.qq.com/561139302/myhome/353?via=QZ.MYAPP',
+#     'shit','http://elasticsearch-py.readthedocs.org/en/latest/api.html'],
+#     ['http://elasticsearch-py.readthedocs.org/en/latest/api.html', 'fuck'])
+
 

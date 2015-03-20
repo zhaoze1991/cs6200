@@ -22,6 +22,9 @@ class MyQueue(object):
             return True
         return False
 
+    def seed_empty(self):
+        return len(self.seeds) == 0
+
     def pop(self):
         if len(self.seeds) > 0:
             self.seeds = collections.deque(sorted(self.seeds, key = lambda x:-x.in_link))
@@ -53,5 +56,6 @@ def get_header(url):
     else:
         res.append('en')
     res.append(resp['content-type'])
+    res.append(str(resp))
     return res
 
