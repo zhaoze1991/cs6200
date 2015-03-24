@@ -47,6 +47,10 @@ def init_index():
                         "store": "true",
                         "index": "not_analyzed"
                     },
+                    "title": {
+                        "type": "string",
+                        "store": "true"
+                    },
                     "html": { # raw html text
                         "type": "string",
                         "store": 'true',

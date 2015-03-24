@@ -106,6 +106,4 @@ def dump_link_graph(f, url, in_num, inlinks, out_num, outlinks):
     f.writelines('\n')
     pass
 
-def check_filesize(filename):
-    return os.system('du -hs ' + filename)
 
