@@ -1,5 +1,5 @@
 #!/usr/local/bin/python
-import robotparser
+import robotparser, os
 import bs4
 import urlparse
 import urlnorm
@@ -21,8 +21,8 @@ sys.setdefaultencoding("utf-8")
 
 # data definition
 es = Elasticsearch()
-f = open('storage','w')
-l = open('linkgraph','w')
+f = open('storage_' + str(os.getpid()), 'w')
+l = open('linkgraph_' + str(os.getpid()), 'w')
 counter = 0
 seeds = [
     'http://en.wikipedia.org/wiki/List_of_highest-grossing_films',

@@ -2,6 +2,7 @@
 import sys, os, re, uuid
 import glob
 import wtf
+
 from elasticsearch import Elasticsearch
 es = Elasticsearch()
 # data definition
@@ -19,28 +20,30 @@ class URL(object):
         self.in_links = []
         self.out_links = []
 
-# ----------------------------------------------------------------------------
-def handleTemp(temp):
+
+def handleTemp(temp, tag, end_tag):
     # extract content from <TEXT> and void <TEXT>content</TEXT>
-    start = temp.find('<TEXT>') + len('<TEXT>')
-    end = temp.find('</TEXT>')
+    start = temp.find(tag) + len(tag)
+    end = temp.find(end_tag)
     return temp[start:end]
+
+
 # ----------------------------------------------------------------------------
 def indexing(url, title, http_header, text, raw):
-    in_links = map(wtf.url_to_uuid, hash_map[url].in_links)
-    out_links = map(wtf.url_to_uuid, hash_map[url].out_links)
+    # in_links = map(wtf.url_to_uuid, hash_map[url].in_links)
+    # out_links = map(wtf.url_to_uuid, hash_map[url].out_links)
     doc = {
         'url' : url,
         'text': text,
         'html': raw,
-        'header': http_header
-        'in-links': in_links
-        'out_links': out_links
+        'header': http_header,
+        # 'in-links': in_links,
+        # 'out_links': out_links
     }
     global count
     es.index(index='hw3',
              doc_type = 'document',
-             id = wtf.url_to_uuid(url)
+             id = wtf.url_to_uuid(url),
              body = doc)
 # ----------------------------------------------------------------------------
 # handleDocument
@@ -53,20 +56,8 @@ def handleDocument(content):
     title = pattern.findall(content)[0]  # title of the document
     pattern = re.compile('<HTML-HEAD>\n(.*?)\n<\/HTML-HEAD>')  # http header
     http_header = pattern.findall(content)[0]
-    text = ''
-    raw = ''
-    while i < length:
-        if '<TEXT>' in content[i]:
-            i += 1
-            while '</TEXT>' not in content[i]:
-                # replace the '\n' with space
-                text += content[i][:-1] + ' '
-                i += 1
-        if '<RAW>' in content[i]:
-            i += 1
-            while '</RAW>' not in content[i]:
-                raw += content[i]
-                i += 1
+    text = handleTemp(content, '<TEXT>', '</TEXT>')
+    raw = handleTemp(content, '<RAW>', '</RAW>')
     indexing(docno, title, http_header, text, raw)
 # ----------------------------------------------------------------------------
 # split the file into document
@@ -76,15 +67,12 @@ def splitDoc(content):
     while i < length:
         if '<DOC>' in content[i]:
             # start to get the whole doc
-            doc = []
-            doc.append(content[i])
+            doc = ''
             i += 1
             while '</DOC>' not in content[i]:
-                doc.append(content[i])
+                doc += content[i]
                 i += 1
-            doc.append(content[i])
             handleDocument(doc)
-            count += 1
         i += 1
     # print i
 # ----------------------------------------------------------------------------
