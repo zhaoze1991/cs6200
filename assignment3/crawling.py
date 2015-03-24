@@ -21,6 +21,8 @@ sys.setdefaultencoding("utf-8")
 
 # data definition
 es = Elasticsearch()
+f = open('storage','w')
+l = open('linkgraph','w')
 counter = 0
 seeds = [
     'http://en.wikipedia.org/wiki/List_of_highest-grossing_films',
@@ -61,8 +63,8 @@ class Link(object):
         self.out_link = 0
         self.visited = False
         self.round = 1
-        self.outs = []
-        self.ins = []
+        self.outs = set()
+        self.ins = set()
         self.header = ''
 
 
@@ -169,7 +171,7 @@ def fetch_page(url):
     global counter
     counter += 1
     print 'dumped: ', counter
-    dump_to_es(urls, response, clean_text, header[2])
+    wtf.dump_to_file(f, urls, title, header[2], clean_text, response)
     for link in soup.find_all('a'):
         link = link.get('href')
         # TODO we can filter more
@@ -185,14 +187,15 @@ def fetch_page(url):
             continue
         if temps in hash_map:
             hash_map[temps].in_link += 1
-            hash_map[temps].ins.append(urls)
+            if temps not in hash_map[temps].ins:
+                hash_map[temps].ins.add(temps)
             continue
         if '.jpg' in temps or '.JPG' in temps or '.png' in temps or '.PNG' in temps or '.svg' in temps or '.SVG' in temps:
             continue
         hash_map[temps] = Link(temps)
-        url.outs.append(temps)
+        url.outs.add(temps)
         hash_map[temps].round = url.round + 1
-        hash_map[temps].ins.append(urls)
+        hash_map[temps].ins.add(urls)
         q.push(hash_map[temps])
 
 
@@ -228,7 +231,8 @@ if __name__ == '__main__':
     for url in hash_map:
         if len(hash_map[url].outs) < 1:
             continue
-        update_es(hash_map[url].url, hash_map[url].ins, hash_map[url].outs)
-
+        wtf.dump_link_graph(l, url, len(hash_map[url].ins), hash_map[url].ins, len(hash_map[url].outs), hash_map[url].outs)
+    f.close()
+    l.close()
 
 

@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import os
 from collections import deque
 import collections
 import urllib2
@@ -82,4 +83,29 @@ def get_header(url):
     res.append(resp['content-type'])
     res.append(str(resp))
     return res
+
+def dump_to_file(f, docno, title, head, text, raw):
+    # f is the file object
+    f.writelines('<DOC>\n')
+    f.writelines('<DOCNO> ' + docno + ' <DOCNO>\n')
+    if title is not None:
+        f.writelines('<HEAD> ' + title + ' <HEAD>\n')
+    if head is not None:
+        # this is the html header
+        f.writelines('<HTML-HEAD>\n' + head + '\n</HTML-HEAD>\n')
+    f.writelines('<TEXT> \n' + text + '<TEXT>\n')
+    f.writelines('<RAW> \n' + raw + '\n</RAW>\n')
+    f.writelines('</DOC>\n')
+
+def dump_link_graph(f, url, in_num, inlinks, out_num, outlinks):
+    f.writelines(url + ' ' + str(in_num) + ' ' + str(out_num) + ' ')
+    for link in inlinks:
+        f.writelines(link + ' ')
+    for link in outlinks:
+        f.writelines(link + ' ')
+    f.writelines('\n')
+    pass
+
+def check_filesize(filename):
+    return os.system('du -hs ' + filename)
 
