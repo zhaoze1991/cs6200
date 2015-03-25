@@ -30,17 +30,16 @@ def handleTemp(temp, tag, end_tag):
 
 # ----------------------------------------------------------------------------
 def indexing(url, title, http_header, text, raw):
-    # in_links = map(wtf.url_to_uuid, hash_map[url].in_links)
-    # out_links = map(wtf.url_to_uuid, hash_map[url].out_links)
+    in_links = map(wtf.url_to_uuid, hash_map[url].in_links)
+    out_links = map(wtf.url_to_uuid, hash_map[url].out_links)
     doc = {
         'url' : url,
         'text': text,
         'html': raw,
         'header': http_header,
-        # 'in-links': in_links,
-        # 'out_links': out_links
+        'in-links': in_links,
+        'out_links': out_links
     }
-    global count
     es.index(index='hw3',
              doc_type = 'document',
              id = wtf.url_to_uuid(url),

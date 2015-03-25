@@ -231,7 +231,7 @@ if __name__ == '__main__':
     for url in hash_map:
         if len(hash_map[url].outs) < 1:
             continue
-        wtf.dump_link_graph(l, url, len(hash_map[url].ins), hash_map[url].ins, len(hash_map[url].outs), hash_map[url].outs)
+        wtf.dump_link_graph(l, url, hash_map[url].outs)
     f.close()
     l.close()
 

@@ -97,12 +97,9 @@ def dump_to_file(f, docno, title, head, text, raw):
     f.writelines('<RAW> \n' + raw + '\n</RAW>\n')
     f.writelines('</DOC>\n')
 
-def dump_link_graph(f, url, in_num, inlinks, out_num, outlinks):
-    f.writelines(url + ' ' + str(in_num) + ' ' + str(out_num) + ' ')
-    for link in inlinks:
-        f.writelines(link + ' ')
-    for link in outlinks:
-        f.writelines(link + ' ')
+def dump_link_graph(f, url, outlinks):
+    f.writelines(url + ' ')
+    f.writelines(' '.join(outlinks))
     f.writelines('\n')
     pass
 
