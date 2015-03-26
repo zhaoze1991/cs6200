@@ -31,28 +31,6 @@ seeds = [
     'http://en.wikipedia.org/wiki/Avatar_(2009_film)',
     'http://www.imdb.com/title/tt0499549/'
 ]
-skip_format = [
-    '.jpg',
-    '.JPG',
-    '.svg',
-    '.SVG',
-    '.png',
-    '.PNG'
-]
-
-
-def dump_to_es(url, html, clean_text, header):
-    doc = {
-        'url': url,
-        'html': html,
-        'text': clean_text,
-        'header': header
-    }
-    es.index(index='hw3',
-             doc_type='document',
-             id=str(uuid.uuid5(uuid.NAMESPACE_URL, url)),
-             body=doc)
-    pass
 
 
 class Link(object):
@@ -67,16 +45,6 @@ class Link(object):
         self.outs = set()
         self.ins = set()
         self.header = ''
-
-class IndexItem(object):
-    def __init__(self, url):
-        super(IndexItem, self).__init__()
-        # we will use the url as the id
-        self.url = url
-        self.clean_text = ''
-        self.raw_html = ''
-        self.in_link = []
-        self.out_link = []
 
 
 q = myq.MyQueue()
@@ -130,8 +98,8 @@ def sleep_function(url):
     domain = get_domain(url)
     if domain in domain_time:
         lapsed = time.time() - domain_time[domain]
-        if lapsed < 1:
-            time.sleep(1 - lapsed)
+        if lapsed < 0.5:
+            time.sleep(0.5 - lapsed)
             domain_time[domain] = time.time()
         else:
             domain_time[domain] = time.time()
@@ -202,29 +170,12 @@ def fetch_page(url):
         q.push(hash_map[temps])
 
 
-def update_es(url, ins, outs):
-    inns = map(wtf.url_to_uuid, ins)
-    ous = map(wtf.url_to_uuid, outs)
-    doc = {
-        'doc': {
-            'in-links': inns,
-            'out-links': ous
-        }
-    }
-    es.update(index='hw3',
-              id=str(uuid.uuid5(uuid.NAMESPACE_URL, url)),
-              doc_type='document',
-              body=doc)
-    pass
-
-
 if __name__ == '__main__':
-    link_map = open('links', 'w')
-    global counter
     for seed in seeds:
         hash_map[seed] = Link(seed)
         q.push(hash_map[seed])
-    while not q.empty() and counter < 14000:
+    global counter
+    while not q.empty() and counter < 12000:
         element = q.pop()
         try:
             fetch_page(element)

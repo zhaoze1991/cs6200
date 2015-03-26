@@ -12,7 +12,6 @@ class Link(object):
         self.outs = set()
         self.ins = set()
         self.header = ''
-        self.index = 0
 
 class MyQueue(object):
     """docstring for MyQueue"""
@@ -80,8 +79,8 @@ class MyQueue(object):
 
 
     def refresh(self, k):
-        while k > 1 and self.compare(self.list[k], self.list[k/2]):
-            self.swap(k, k/2)
+        while k > 1 and self.compare(self.list[k], self.list[k / 2]):
+            self.swap(k, k / 2)
             k = k / 2
             pass
 
@@ -89,8 +88,8 @@ class MyQueue(object):
         temp = self.list[index1]
         self.list[index1] = self.list[index2]
         self.list[index2] = temp
-        self.hash_map[self.list[index1]] = index1
-        self.hash_map[self.list[index2]] = index2
+        self.hash_map[self.list[index1].url] = index1
+        self.hash_map[self.list[index2].url] = index2
 
     def compare(self, item1, item2):
         # return if item1 has higher priority
@@ -102,6 +101,8 @@ class MyQueue(object):
                     return False
             else:
                 return True
+        elif item2.round == 1:
+            return False
         if item1.in_link > item2.in_link:
             return True
         elif item1.in_link < item2.in_link:

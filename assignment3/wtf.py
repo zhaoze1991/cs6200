@@ -111,3 +111,19 @@ def check_exist(es, url):
               )
 
 
+def update_es(es, url, ins, outs):
+    inns = map(wtf.url_to_uuid, ins)
+    ous = map(wtf.url_to_uuid, outs)
+    doc = {
+        'doc': {
+            'in-links': inns,
+            'out-links': ous
+        }
+    }
+    es.update(index='hw3',
+              id=str(uuid.uuid5(uuid.NAMESPACE_URL, url)),
+              doc_type='document',
+              body=doc)
+    pass
+
+
