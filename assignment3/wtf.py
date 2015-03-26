@@ -103,4 +103,11 @@ def dump_link_graph(f, url, outlinks):
     f.writelines('\n')
     pass
 
+def check_exist(es, url):
+    # es the the elastic search object
+    return es.exists(index = 'hw3',
+              id = wtf.url_to_uuid(url),
+              doc_type = 'document'
+              )
+
 

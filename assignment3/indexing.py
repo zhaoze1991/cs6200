@@ -6,8 +6,8 @@ import wtf
 from elasticsearch import Elasticsearch
 es = Elasticsearch()
 # data definition
-f = open('storage_12573', 'r').readlines()
-l = open('linkgraph_12573', 'r').readlines()
+# f = open('storage_12573', 'r').readlines()
+# l = open('linkgraph_12573', 'r').readlines()
 hash_map = {}
 
 class URL(object):
@@ -26,7 +26,6 @@ def handleTemp(temp, tag, end_tag):
     start = temp.find(tag) + len(tag)
     end = temp.find(end_tag)
     return temp[start:end]
-
 
 # ----------------------------------------------------------------------------
 def indexing(url, title, http_header, text, raw):
@@ -91,4 +90,5 @@ def main():
     splitDoc(f)
     # print count
 if __name__ == '__main__':
-    main()
+    # main()
+    print check_exist('http://en.wikipedia.org/wiki/Rhys_Ifans')

@@ -68,7 +68,6 @@ class Link(object):
         self.ins = set()
         self.header = ''
 
-
 class IndexItem(object):
     def __init__(self, url):
         super(IndexItem, self).__init__()
@@ -131,8 +130,8 @@ def sleep_function(url):
     domain = get_domain(url)
     if domain in domain_time:
         lapsed = time.time() - domain_time[domain]
-        if lapsed < 1.0:
-            time.sleep(1.0 - lapsed)
+        if lapsed < 1:
+            time.sleep(1 - lapsed)
             domain_time[domain] = time.time()
         else:
             domain_time[domain] = time.time()
@@ -188,6 +187,7 @@ def fetch_page(url):
             continue
         if temps in hash_map:
             hash_map[temps].in_link += 1
+            q.update(hash_map[temps])
             if temps not in hash_map[temps].ins:
                 hash_map[temps].ins.add(temps)
             if temps not in url.outs:

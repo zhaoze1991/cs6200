@@ -12,6 +12,7 @@ class Link(object):
         self.outs = set()
         self.ins = set()
         self.header = ''
+        self.index = 0
 
 class MyQueue(object):
     """docstring for MyQueue"""
@@ -19,6 +20,7 @@ class MyQueue(object):
         super(MyQueue, self).__init__()
         self.list = [Link('null')]  # node 0 always not used
         self.index = 0  # the index of the last element
+        self.hash_map = {}  # url -> index
 
     def empty(self):
         # check if the priority queue is empty
@@ -28,6 +30,7 @@ class MyQueue(object):
         # add item to the list
         self.list.append(item)
         self.index += 1
+        self.hash_map[item.url] = self.index
         self.refresh(self.index)
 
     def pop(self):
@@ -35,15 +38,22 @@ class MyQueue(object):
         # if self.empty(): we should check, but I have check in the crawler
             # return
         res = self.list[1]
+        del self.hash_map[res.url]
         if self.index == 1:
             del self.list[-1]
             self.index -= 1
             return res
         self.list[1] = self.list[self.index]
+        self.hash_map[self.list[1].url] = 1
         del self.list[-1]
         self.index -= 1
         self.heapify(1)
         return res
+
+    def update(self, item):
+        if item.url not in self.hash_map:
+            return
+        self.refresh(self.hash_map[item.url])
 
     def heapify(self, kk):
         k = kk
@@ -79,7 +89,8 @@ class MyQueue(object):
         temp = self.list[index1]
         self.list[index1] = self.list[index2]
         self.list[index2] = temp
-
+        self.hash_map[self.list[index1]] = index1
+        self.hash_map[self.list[index2]] = index2
 
     def compare(self, item1, item2):
         # return if item1 has higher priority
