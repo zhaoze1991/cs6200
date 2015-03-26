@@ -15,6 +15,7 @@ import socket
 from elasticsearch import Elasticsearch
 import uuid
 import sys
+import myq
 reload(sys)
 sys.setdefaultencoding("utf-8")
 
@@ -79,7 +80,7 @@ class IndexItem(object):
         self.out_link = []
 
 
-q = wtf.MyQueue()
+q = myq.MyQueue()
 hash_map = {}  # url -> Link,
 spam_map = {}  # url -> whatever, should store this to filter un-related document
 domain_time = {}  # domain -> last time visit
@@ -189,6 +190,8 @@ def fetch_page(url):
             hash_map[temps].in_link += 1
             if temps not in hash_map[temps].ins:
                 hash_map[temps].ins.add(temps)
+            if temps not in url.outs:
+               url.outs.add(temps)
             continue
         if '.jpg' in temps or '.JPG' in temps or '.png' in temps or '.PNG' in temps or '.svg' in temps or '.SVG' in temps:
             continue
@@ -220,8 +223,8 @@ if __name__ == '__main__':
     global counter
     for seed in seeds:
         hash_map[seed] = Link(seed)
-        q.push_seeds(hash_map[seed])
-    while not q.empty() and counter < 12000:
+        q.push(hash_map[seed])
+    while not q.empty() and counter < 14000:
         element = q.pop()
         try:
             fetch_page(element)

@@ -6,8 +6,8 @@ import wtf
 from elasticsearch import Elasticsearch
 es = Elasticsearch()
 # data definition
-f = open('s', 'r').readlines()
-l = open('g', 'r').readlines()
+f = open('storage_12573', 'r').readlines()
+l = open('linkgraph_12573', 'r').readlines()
 hash_map = {}
 
 class URL(object):
@@ -30,6 +30,9 @@ def handleTemp(temp, tag, end_tag):
 
 # ----------------------------------------------------------------------------
 def indexing(url, title, http_header, text, raw):
+    print url
+    if url not in hash_map:
+        print 'not '
     in_links = map(wtf.url_to_uuid, hash_map[url].in_links)
     out_links = map(wtf.url_to_uuid, hash_map[url].out_links)
     doc = {
@@ -82,11 +85,9 @@ def main():
             continue
         url = line[0]
         hash_map[url] = URL(url)
-        hash_map[url].in_num = int(line[1])
-        hash_map[url].out_num = int(line[2])
-        hash_map[url].in_links = line[3 : 3 + int(line[1])]
-        hash_map[url].out_links = line[3 + int(line[1]) : len(line)]
-        print hash_map[url].in_links, hash_map[url].out_links
+
+        hash_map[url].out_links = line[1 : len(line)]
+        # print hash_map[url].in_links, hash_map[url].out_links
     splitDoc(f)
     # print count
 if __name__ == '__main__':
