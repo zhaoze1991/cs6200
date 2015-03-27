@@ -98,8 +98,8 @@ def sleep_function(url):
     domain = get_domain(url)
     if domain in domain_time:
         lapsed = time.time() - domain_time[domain]
-        if lapsed < 0.5:
-            time.sleep(0.5 - lapsed)
+        if lapsed < 1:
+            time.sleep(1 - lapsed)
             domain_time[domain] = time.time()
         else:
             domain_time[domain] = time.time()
@@ -175,7 +175,7 @@ if __name__ == '__main__':
         hash_map[seed] = Link(seed)
         q.push(hash_map[seed])
     global counter
-    while not q.empty() and counter < 12000:
+    while not q.empty() and counter < 20000:
         element = q.pop()
         try:
             fetch_page(element)
