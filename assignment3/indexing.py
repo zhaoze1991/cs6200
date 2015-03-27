@@ -6,8 +6,8 @@ import wtf
 from elasticsearch import Elasticsearch
 es = Elasticsearch()
 # data definition
-# f = open('storage_12573', 'r').readlines()
-# l = open('linkgraph_12573', 'r').readlines()
+f = open('storage_12573', 'r').readlines()
+l = open('linkgraph_12573', 'r').readlines()
 hash_map = {}
 
 class URL(object):
@@ -32,15 +32,15 @@ def indexing(url, title, http_header, text, raw):
     print url
     if url not in hash_map:
         print 'not '
-    in_links = map(wtf.url_to_uuid, hash_map[url].in_links)
+    # in_links = map(wtf.url_to_uuid, hash_map[url].in_links)
     out_links = map(wtf.url_to_uuid, hash_map[url].out_links)
     doc = {
         'url' : url,
         'text': text,
         'html': raw,
         'header': http_header,
-        'in-links': in_links,
-        'out_links': out_links
+        'title': title,
+        'out-links': out_links
     }
     es.index(index='hw3',
              doc_type = 'document',
@@ -84,11 +84,10 @@ def main():
             continue
         url = line[0]
         hash_map[url] = URL(url)
-
         hash_map[url].out_links = line[1 : len(line)]
         # print hash_map[url].in_links, hash_map[url].out_links
     splitDoc(f)
     # print count
 if __name__ == '__main__':
-    # main()
-    print check_exist('http://en.wikipedia.org/wiki/Rhys_Ifans')
+    main()
+    # print check_exist('http://en.wikipedia.org/wiki/Rhys_Ifans')
