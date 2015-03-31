@@ -55,7 +55,7 @@ def merge(url):
     if 'fields' not in existed:
         update(url, res)
         return
-    for inlink in existed:
+    for inlink in existed['fields']['in-links']:
         res.add(inlink.encode('utf-8'))
     update(url, res)
 
