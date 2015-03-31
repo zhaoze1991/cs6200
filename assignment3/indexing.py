@@ -51,7 +51,8 @@ def merge(url, title, http_header, text, raw):
                   id=wtf.url_to_uuid(url),
                   doc_type='document',
                   body=doc)
-    for
+
+
 # ----------------------------------------------------------------------------
 def indexing(url, title, http_header, text, raw):
     if check_exist(url):
