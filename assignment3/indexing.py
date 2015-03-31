@@ -2,14 +2,16 @@
 import sys, os, re, uuid
 import glob
 import wtf
+import time
 
 from elasticsearch import Elasticsearch
 es = Elasticsearch()
 # data definition
+start = time.time()
 f = open('storage_3916', 'r').readlines()
 inlink = open('inlinks2.txt', 'r').readlines()
 l = open('linkgraph_3916', 'r').readlines()
-
+print time.time() - start
 hash_map = {}
 
 class URL(object):
@@ -22,7 +24,7 @@ class URL(object):
         self.in_links = []
         self.out_links = []
 
-def exists(url):
+def check_exist(url):
     return es.exists(index = 'hw3',
         id = wtf.url_to_uuid(url),
         doc_type = 'document')
@@ -34,33 +36,40 @@ def handleTemp(temp, tag, end_tag):
     end = temp.find(end_tag)
     return temp[start:end]
 
-def merge(url, title, http_header, text, raw):
-    existed = es.get(index = 'hw3', doc_type = 'document', id =wtf.url_to_uuid(url)
-                fields=['in-links'])['fields']['in-links']
-    res = set()
-    for url in hash_map[url].in_links:
-        res.add(url.encode('utf-8'))
-    for url in existed:
-        res.add(wtf.url_to_uuid(url))
+
+def update(url, res):
     doc = {
             'doc': {
-                'in-links': res
+                'in-links': list(res)
             }
         }
-    es.update(index='hw3',
-                  id=wtf.url_to_uuid(url),
-                  doc_type='document',
-                  body=doc)
+    es.update(index = 'hw3', id = wtf.url_to_uuid(url), doc_type = 'document',
+        body = doc)
+
+def merge(url):
+    existed = es.get(index = 'hw3', doc_type = 'document', id =wtf.url_to_uuid(url),
+                fields=['in-links'])
+    res = set()
+    for inlink in hash_map[url].in_links:
+        res.add(wtf.url_to_uuid(inlink))
+    if 'fields' not in existed:
+        update(url, res)
+        return
+    for inlink in existed:
+        res.add(inlink.encode('utf-8'))
+    update(url, res)
 
 
 # ----------------------------------------------------------------------------
 def indexing(url, title, http_header, text, raw):
+    print url
     if check_exist(url):
-        merger(url, title, http_header, text, raw)
+        merge(url)
         return
     if url not in hash_map:
         print 'not '
-    # in_links = map(wtf.url_to_uuid, hash_map[url].in_links)
+        return
+    in_links = map(wtf.url_to_uuid, hash_map[url].in_links)
     out_links = map(wtf.url_to_uuid, hash_map[url].out_links)
     doc = {
         'url' : url,
@@ -68,6 +77,7 @@ def indexing(url, title, http_header, text, raw):
         'html': raw,
         'header': http_header,
         'title': title,
+        'in_links':in_links,
         'out-links': out_links
     }
     es.index(index='hw3',
