@@ -267,9 +267,9 @@ if __name__ == '__main__':
             obj.precision[k] = precision_at_k(obj, k)
             precision[k] += obj.precision[k]
         if step:
-            print_func(obj.qid, obj.total_num, qrel_map[obj.qid].relevant, obj.relevant,
+            print_func(int(obj.qid), obj.total_num, qrel_map[obj.qid].relevant, obj.relevant,
                        obj.recall_precision[0.0], obj.recall_precision[0.2],
-                       obj.recall_precision[0.4], obj.recall_precision[0.8],
+                       obj.recall_precision[0.4], obj.recall_precision[0.6], obj.recall_precision[0.8],
                        obj.recall_precision[1.0], obj.avg, obj.precision[5],
                        obj.precision[10], obj.precision[20],
                        obj.precision[50], obj.precision[100],
