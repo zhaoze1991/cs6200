@@ -81,7 +81,7 @@ def read_qrel(qrel):
 def dcg(r):
     r1, i = float(r[0]), 1
     while i < len(r):
-        r1 += float(r[i] / log(10, i + 1))
+        r1 += float(r[i] / log10(i + 1))
         i += 1
     return r1
     pass
