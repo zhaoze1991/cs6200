@@ -81,7 +81,7 @@ def read_qrel(qrel):
 def dcg(r):
     r1, i = float(r[0]), 1
     while i < len(r):
-        r1 += float(r[i] / log10(i + 1))
+        r1 += float(r[i]) / log10(i + 1)
         i += 1
     return r1
     pass
@@ -102,7 +102,7 @@ def ndcg(obj):
     for doc in obj.documents:
         r.append(get_grade(qid, doc))
     up = dcg(r)
-    r.reverse()
+    r = sorted(r, reverse=True)
     down = dcg(r)
     if down == 0:
         return
@@ -157,6 +157,9 @@ def read_trec_file(filename):
 def f1_at_k(obj, k):
     precision = obj.precision[k]
     recall = obj.recall[k]
+    if precision + recall == 0:
+        obj.f1[k] = 0
+        return
     obj.f1[k] = 2 * precision * recall / (precision + recall)
     pass
 
@@ -204,12 +207,20 @@ def recall_precision(obj):
                 rec_map[key] = precision
     return rec_map
 
-def print_func(qid, ret, rel, rel_ret, p0, p2, p4, p6, p8, p10, avg, p5d, p10d, p20d, p50d, p100d, rp):
+def print_func(qid, ret, rel, rel_ret, p0, p2, p4, p6, p8, p10, avg, p5d, p10d, p20d, p50d, p100d, rp,
+f5, f10, f20, f50, f100, ndcg, re5, re10, re20, re50, re100):
     print "\nQueryid (Num):    %5d" % qid
     print "Total number of documents over all queries"
     print "    Retrieved:    %5d" %ret
     print "    Relevant:     %5d" %rel
     print "    Rel_ret:      %5d" %rel_ret
+    print "F1-Measure:         "
+    print "    at k = 5      %.4f" %f5
+    print "    at k = 10     %.4f" %f10
+    print "    at k = 20     %.4f" %f20
+    print "    at k = 50     %.4f" %f50
+    print "    at k = 100    %.4f" %f100
+    print "nDCG              %.4f" %ndcg
     print "Interpolated Recall - Precision Averages:"
     print "    at 0.00       %.4f" %p0
     print "    at 0.20       %.4f" %p2
@@ -225,6 +236,12 @@ def print_func(qid, ret, rel, rel_ret, p0, p2, p4, p6, p8, p10, avg, p5d, p10d, 
     print "  At   20 docs:   %.4f" %p20d
     print "  At   50 docs:   %.4f" %p50d
     print "  At  100 docs:   %.4f" %p100d
+    print "Recall:"
+    print "  At    5 docs:   %.4f" %re5
+    print "  At   10 docs:   %.4f" %re10
+    print "  At   20 docs:   %.4f" %re20
+    print "  At   50 docs:   %.4f" %re50
+    print "  At  100 docs:   %.4f" %re100
     print "R-Precision (precision after R (= num_rel for a query) docs retrieved):";
     print "    Exact:        %.4f" %rp
 
@@ -248,7 +265,7 @@ if __name__ == '__main__':
         0.8 : 0.0,
         1.0 : 0.0
     }
-    count, avg, tt_ndcg, recall, precision, tt_r_precision = 0, 0.0, 0.0, defaultdict(lambda:0.0), defaultdict(lambda:0.0), 0.0
+    count, avg, tt_ndcg, recall, precision, tt_r_precision, f1 = 0, 0.0, 0.0, defaultdict(lambda:0.0), defaultdict(lambda:0.0), 0.0, defaultdict(lambda:0.0)
     for key in trec_map:
         obj = trec_map[key]
         count += 1
@@ -266,6 +283,8 @@ if __name__ == '__main__':
             recall[k] += obj.recall[k]
             obj.precision[k] = precision_at_k(obj, k)
             precision[k] += obj.precision[k]
+            f1_at_k(obj, k)
+            f1[k] += obj.f1[k]
         if step:
             print_func(int(obj.qid), obj.total_num, qrel_map[obj.qid].relevant, obj.relevant,
                        obj.recall_precision[0.0], obj.recall_precision[0.2],
@@ -273,7 +292,8 @@ if __name__ == '__main__':
                        obj.recall_precision[1.0], obj.avg, obj.precision[5],
                        obj.precision[10], obj.precision[20],
                        obj.precision[50], obj.precision[100],
-                       obj.r_precision)
+                       obj.r_precision, obj.f1[5], obj.f1[10], obj.f1[20], obj.f1[50], obj.f1[100], obj.ndcg, obj.recall[5],
+                       obj.recall[10], obj.recall[20], obj.recall[50], obj.recall[100])
         pass
     Retrieved = reduce(lambda x, y : x + y, map(lambda x: x.total_num, trec_map.values()))
     Relevant = reduce(lambda x, y : x + y, map(lambda x: x.relevant, qrel_map.values()))
@@ -284,4 +304,5 @@ if __name__ == '__main__':
                res[1.0] / count,  avg / count,  precision[5] / count,
                precision[10] / count, precision[20] / count,
                precision[50] / count, precision[100] / count,
-               tt_r_precision / count)
+               tt_r_precision / count, f1[5] / count, f1[10] / count, f1[20] / count, f1[50] / count, f1[100] / count, tt_ndcg / count,
+               recall[5] / count, recall[10] / count, recall[20] / count, recall[50] / count, recall[100]/ count)
