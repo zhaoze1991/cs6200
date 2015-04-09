@@ -45,15 +45,17 @@ def read_file():
             row.append(row_num)
             col.append(column_num)
             data.append(float(1)/num)
-    sparse_matrix = csc_matrix((numpy.array(data), (numpy.array(row), numpy.array(col))), shape=(len(hash_map), len(hash_map)))
-    my_list = [float(1)/len(hash_map)] * len(hash_map)
-    v = numpy.array(my_list)
-    v = sparse_matrix.dot(v)
-    for i in range(20):
-        v = sparse_matrix.dot(v)
-    for i in v:
-        print i
-
+    sparse_matrix = csc_matrix((numpy.array(data), (numpy.array(row), numpy.array(col))), shape=(len(hash_map), len(hash_map))).toarray()
+    # my_list = [float(1)/len(hash_map)] * len(hash_map)
+    # v = numpy.array(my_list)
+    # v = sparse_matrix.dot(v)
+    # for i in range(20):
+    #     v = sparse_matrix.dot(v)
+    # for i in v:
+    #     print i
+    print sparse_matrix
+    vals, vecs = linalg.eigs(sparse_matrix, k = 1)
+    print vecs
 
 def eigen_example():
     A = csc_matrix([[1,0,0], [0,1,0],[0,0,1]],dtype=float)
@@ -70,4 +72,3 @@ def eigen_example():
 # A += C
 # print A
 read_file()
-

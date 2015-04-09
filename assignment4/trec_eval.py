@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 from elasticsearch import Elasticsearch
-from math import log
+from math import log10
 import sys
 from collections import defaultdict
 query_size = 100
