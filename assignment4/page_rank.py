@@ -7,9 +7,12 @@ from scipy.sparse import lil_matrix
 from scipy.sparse.linalg import spsolve
 import time
 import sys
+import collections
 # import scipy.sparse as sparse
 count = 0
-hash_map = {}  # page id -> count
+hash_map = {}  # url -> id
+hash_map_2  = {} # id -> url
+# hash_set = set()
 
 
 class Node(object):
@@ -17,13 +20,12 @@ class Node(object):
     def __init__(self, arg):
         super(Node, self).__init__()
         self.url = arg  # the url is a identifier for the node
-        self.id = 0  # the id of the node.
-        self.outlink_num = 0
         self.outlink = set()  # the out link for the node
+        pass
 
 
 def read_file():
-    f = open('wt2g_inlinks.txt', 'r').readlines()
+    f = open('out_link.txt', 'r').readlines()
     # get the # for each node
     global count
     for line in f:
@@ -33,6 +35,7 @@ def read_file():
                 continue
             else:
                 hash_map[item] = count
+                hash_map_2[count] = item
                 count += 1
     # get let's construct the matrix
     data, row, col = [], [], []
@@ -45,17 +48,55 @@ def read_file():
             row.append(row_num)
             col.append(column_num)
             data.append(float(1)/num)
-    sparse_matrix = csc_matrix((numpy.array(data), (numpy.array(row), numpy.array(col))), shape=(len(hash_map), len(hash_map))).toarray()
-    # my_list = [float(1)/len(hash_map)] * len(hash_map)
+    my_list = [float(1)/len(hash_map)] * len(hash_map)
+    build_sparse(numpy.array(data), numpy.array(row), numpy.array(col), len(hash_map), my_list)
     # v = numpy.array(my_list)
     # v = sparse_matrix.dot(v)
     # for i in range(20):
     #     v = sparse_matrix.dot(v)
     # for i in v:
     #     print i
+    # print sparse_matrix
+
+
+
+def dump_file(file_name):
+    f = open(file_name, 'r').readlines()
+    # we need a list to store node obj
+    node_map = {}
+    for line in f:
+        line = line.split()
+        head = line[0]
+        for i in range(1, len(line)):
+            if line[i] in node_map:
+                node_map[line[i]].add(head)
+            else:
+                node_map[line[i]] = set()
+                node_map[line[i]].add(head)
+    out_links = open('out_link.txt', 'w')
+    for key in node_map:
+        result = key + ' '
+        for node in node_map[key]:
+            result += node + ' '
+        out_links.writelines(result + '\n')
+    out_links.close()
+    pass
+
+
+def build_sparse(data, row, col, n, my_list):
+    sparse_matrix = csc_matrix((data, (row, col)), shape=(n, n))
     print sparse_matrix
-    vals, vecs = linalg.eigs(sparse_matrix, k = 1)
-    print vecs
+    for i in range(100):
+        sparse_matrix = sparse_matrix.multiply(sparse_matrix)
+    res = sparse_matrix.dot(my_list)
+    out = open('result_page.txt', 'w')
+    for num in range(0, len(hash_map)):
+        result = hash_map_2[num] + ' '
+        result += str(res[num]) + '\n'
+        out.writelines(result)
+    out.close()
+
+
 
 def eigen_example():
     A = csc_matrix([[1,0,0], [0,1,0],[0,0,1]],dtype=float)
@@ -64,11 +105,12 @@ def eigen_example():
     print vals, vecs
     print A
     print vecs.shape
-# eigen_example()
-# A =csc_matrix([[1,0,0]])
-# B = csc_matrix([[0,1,0]])
-# C = csc_matrix([0,0,1])
-# A += B
-# A += C
-# print A
-read_file()
+
+
+if __name__ == '__main__':
+    dump_file('wt2g_inlinks.txt')
+    read_file()
+
+
+
+
