@@ -8,6 +8,7 @@ from scipy.sparse.linalg import spsolve
 import time
 import sys
 import collections
+import operator
 # import scipy.sparse as sparse
 count = 0
 hash_map = {}  # url -> id
@@ -24,40 +25,38 @@ class Node(object):
         pass
 
 
-def read_file():
-    f = open('out_link.txt', 'r').readlines()
+def read_file(file_name):
+    f = open(file_name, 'r').readlines()
     # get the # for each node
     global count
     for line in f:
         line = line.split()
-        for item in line:
-            if item in hash_map:
-                continue
-            else:
-                hash_map[item] = count
-                hash_map_2[count] = item
-                count += 1
-    # get let's construct the matrix
+        node = line[0]
+        if node in hash_map:
+            continue
+        else:
+            hash_map[node] = count
+            hash_map_2[count] = node
+            count += 1
     data, row, col = [], [], []
     for line in f:
         line = line.split()
-        num = len(line) - 1
+        num = 0
         row_num = hash_map[line[0]]
         for i in range(1, len(line)):
+            if line[i] not in hash_map:
+                continue
+            num += 1
+        for i in range(1, len(line)):
+            if line[i] not in hash_map:
+                continue
             column_num = hash_map[line[i]]
             row.append(row_num)
             col.append(column_num)
             data.append(float(1)/num)
-    my_list = [float(1)/len(hash_map)] * len(hash_map)
-    build_sparse(numpy.array(data), numpy.array(row), numpy.array(col), len(hash_map), my_list)
-    # v = numpy.array(my_list)
-    # v = sparse_matrix.dot(v)
-    # for i in range(20):
-    #     v = sparse_matrix.dot(v)
-    # for i in v:
-    #     print i
-    # print sparse_matrix
-
+    my_list = [1.0/len(hash_map)] * len(hash_map)
+    build_sparse(numpy.array(data), numpy.array(row), numpy.array(col), len(hash_map), numpy.array(my_list))
+    pass
 
 
 def dump_file(file_name):
@@ -85,31 +84,48 @@ def dump_file(file_name):
 
 def build_sparse(data, row, col, n, my_list):
     sparse_matrix = csc_matrix((data, (row, col)), shape=(n, n))
-    print sparse_matrix
+    print 'start to calculate'
+    # initial = numpy.asmatrix(numpy.full((sparse_matrix.shape[0], 1), 1 / sparse_matrix.shape[0]))
     for i in range(100):
-        sparse_matrix = sparse_matrix.multiply(sparse_matrix)
-    res = sparse_matrix.dot(my_list)
+        temp = my_list
+        my_list = my_list * sparse_matrix
+        if i > 50 and numpy.linalg.norm(my_list - temp, 1) < 1e-8:
+            break
+    res = {}
     out = open('result_page.txt', 'w')
     for num in range(0, len(hash_map)):
-        result = hash_map_2[num] + ' '
-        result += str(res[num]) + '\n'
-        out.writelines(result)
+        res[hash_map_2[num]] = my_list[num]
+    res = sorted(res.items(), key=lambda x: (-x[1]))
+    for i in res:
+        out.writelines(i[0] + ' ' + str(i[1]) + '\n')
     out.close()
 
 
 
 def eigen_example():
-    A = csc_matrix([[1,0,0], [0,1,0],[0,0,1]],dtype=float)
-    print A
-    vals, vecs = linalg.eigs(A, k =1)
-    print vals, vecs
-    print A
-    print vecs.shape
+    A = csc_matrix([[0,1], [1,0]],dtype=float)
+    # print A
+    # vals, vecs = linalg.eigs(A, k =1)
+    # print vecs
+    my_list = [1.0/2.0] * 2
+    print my_list
+    temp = A.dot(my_list)
+    for i in range(100):
+        temp = A.dot(temp)
+    print temp
+
+
+def page_rank_crawled():
+    read_file('linkgraph_12573')
 
 
 if __name__ == '__main__':
     dump_file('wt2g_inlinks.txt')
-    read_file()
+    read_file('out_link.txt')
+    # page_rank_crawled()
+    pass
+
+# eigen_example()
 
 
 

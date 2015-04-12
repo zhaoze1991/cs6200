@@ -40,7 +40,9 @@ class Query(object):
 def get_ranklist():
     es = Elasticsearch()
     query = {
-        23333 : 'fuck you',
+        1 : 'titanic cast',
+        2 : 'avatar cast',
+        3 : 'batman cast'
         }
     f = open(ranklist, 'w')
     for key in query:
@@ -246,6 +248,7 @@ f5, f10, f20, f50, f100, ndcg, re5, re10, re20, re50, re100):
     print "    Exact:        %.4f" %rp
 
 if __name__ == '__main__':
+    get_ranklist()
     arguments = sys.argv[1:]
     n = len(arguments)
     if n < 2:
