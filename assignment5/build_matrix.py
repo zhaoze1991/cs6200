@@ -5,7 +5,7 @@ from itertools import islice
 stop_list = {}
 term_list = []
 recent_search = {}
-all_docs = {}  # qid -> {docno, label}
+all_docs = {}  # qid -> {docno -> label}
 matrix_hash = {} # qid -> my_matrix object
 
 K = 100
@@ -16,6 +16,7 @@ def filter_document():
     for line in f:
         line = line.split()
         qid, label = int(line[0]), int(line[3])
+        counter += 1
         if qid not in all_docs:
             all_docs[qid] = {}
         all_docs[qid][line[2]] = label
@@ -26,6 +27,7 @@ class MyMatrix(object):
         self.qid = qid
         self.tf_idf, self.bm25, self.okapi = {}, {}, {}
         self.jel, self.lap, self.label = {}, {}, {} # docid -> corresponding score
+        self.category = ''
     pass
 
 
@@ -67,6 +69,19 @@ class Term(object):
         self.df = 0
         self.ttf = 0
         self.position = {}  # document id -> positions
+
+def build_matrix_to_file():
+    global matrix_hash
+    f = open('feature_matirx', 'w')
+    for qid in matrix_hash:
+        obj = matrix_hash[qid]
+        for doc in all_docs[qid]:
+            res = str(qid) + ' ' + doc + ' '
+            res += str(obj.tf_idf[doc]) + ' ' + str(obj.bm25[doc]) + ' ' + str(obj.okapi[doc]) + ' '
+            res += str(obj.jel[doc]) + ' ' + str(obj.lap[doc]) + ' ' + str(obj.label[doc]) + ' '
+            res += obj.category + '\n'
+            f.writelines(res)
+    f.close()
 
 
 def dump_position(entry, term, docs):
@@ -224,7 +239,7 @@ def term_frequency_in_query(term, query):
     return freq
 
 
-def search(entry,qid, query, k):
+def search(entry,qid, query, k, category):
     Okapi_TF_scores = collections.defaultdict(lambda: 0.0)
     TF_IDF_scores = collections.defaultdict(lambda: 0.0)
     Okapi_BM25_socres = collections.defaultdict(lambda: 0.0)
@@ -263,8 +278,9 @@ def search(entry,qid, query, k):
     obj = MyMatrix(qid)
     for doc in all_docs[qid]:
         obj.tf_idf[doc], obj.bm25[doc] = TF_IDF_scores[doc], Okapi_BM25_socres[doc]
-        obj.okapi[doc], obj.jel = Okapi_TF_scores[doc], Jelinek_Mercer_scores[doc]
+        obj.okapi[doc], obj.jel[doc] = Okapi_TF_scores[doc], Jelinek_Mercer_scores[doc]
         obj.lap[doc], obj.label[doc] = Laplace_scores[doc], all_docs[qid][doc]
+    obj.category = category
     matrix_hash[qid] = obj
     Okapi_TF_scores = sort(Okapi_TF_scores, k)
     TF_IDF_scores = sort(TF_IDF_scores, k)
@@ -344,13 +360,14 @@ def do_search(entry):
     proximity, count = [], 0
     for questions in q:
         count += 1
-#         if count > 20:
-#             break
+        category = 'train'
+        if count > 20:
+            category = 'test'
         for index in questions:
             print 'search ', questions[index]
             temp = ''
             temp += str(index) + ' Q0 '
-            result = search(entry, int(index), questions[index], K)
+            result = search(entry, int(index), questions[index], K, category)
             Okapi_TF = output_format(Okapi_TF, result[0], temp)
             TF_IDF = output_format(TF_IDF, result[1], temp)
             Okapi_BM25 = output_format(Okapi_BM25, result[2], temp)
@@ -358,13 +375,7 @@ def do_search(entry):
             Jelinek_Mercer = output_format(Jelinek_Mercer, result[4], temp)
             new_model = new_search(entry, questions[index], K)
             proximity = output_format(proximity, new_model[0], temp)
-
-    write_file(Okapi_TF, entry.name + '_Okapi_TF')
-    write_file(TF_IDF, entry.name + '_TF_IDF')
-    write_file(Okapi_BM25, entry.name + '_Okapi_BM25')
-    write_file(Laplace_smoothing, entry.name + '_Laplace_smoothing')
-    write_file(Jelinek_Mercer, entry.name + '_Jelinek_Mercer')
-    write_file(proximity, entry.name + '_Proximity_Search')
+    pass
 
 
 def new_main(name, stem, stop):
@@ -372,23 +383,10 @@ def new_main(name, stem, stop):
     dump_info(entry)
     dump_category(entry)
     do_search(entry)
-
-
-def new_test():
-    entry = IndexEntry('tt', True, True)
-    dump_info(entry)
-    dump_category(entry)
-    w = indexing.stem('mozambique')
-    print w
-    item = Term(w)
-    dump_cache(entry, item)
-    for id in item.document:
-        print entry.document[id][0]
-    pass
+    build_matrix_to_file()
 
 
 if __name__ == '__main__':
     load_stop_list()
-    # new_test()
     filter_document()
     new_main('tt', True, True)
