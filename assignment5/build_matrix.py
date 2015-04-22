@@ -16,7 +16,6 @@ def filter_document():
     for line in f:
         line = line.split()
         qid, label = int(line[0]), int(line[3])
-        counter += 1
         if qid not in all_docs:
             all_docs[qid] = {}
         all_docs[qid][line[2]] = label
@@ -27,7 +26,7 @@ class MyMatrix(object):
         self.qid = qid
         self.tf_idf, self.bm25, self.okapi = {}, {}, {}
         self.jel, self.lap, self.label = {}, {}, {} # docid -> corresponding score
-        self.category = ''
+        self.category, self.prox = '', {}
     pass
 
 
@@ -78,7 +77,11 @@ def build_matrix_to_file():
         for doc in all_docs[qid]:
             res = str(qid) + ' ' + doc + ' '
             res += str(obj.tf_idf[doc]) + ' ' + str(obj.bm25[doc]) + ' ' + str(obj.okapi[doc]) + ' '
-            res += str(obj.jel[doc]) + ' ' + str(obj.lap[doc]) + ' ' + str(obj.label[doc]) + ' '
+            res += str(obj.jel[doc]) + ' ' + str(obj.lap[doc]) + ' '
+            try:
+                res += str(obj.prox[doc]) + ' ' + str(obj.label[doc]) + ' '
+            except:
+                res +=  ' 0 ' + str(obj.label[doc]) + ' '
             res += obj.category + '\n'
             f.writelines(res)
     f.close()
@@ -310,13 +313,10 @@ def output_format(container, result, temp):
     return container
 
 
-def new_search(entry, questions, K):
+def new_search(entry, qid, questions, K, category):
     proximity = collections.defaultdict(lambda: 0.0)
-    item_list = []
+    item_list, docs, q, res = [], {}, {}, []
     # docs = collections.defaultdict(lambda: 0)
-    docs = {}
-    q = {}
-    res = []
     C = 1500
     for qq in questions:
         if qq in q:
@@ -345,6 +345,11 @@ def new_search(entry, questions, K):
         score = float((C - s) * docs[doc])
         score /= (entry.document[doc][1] + entry.v)
         proximity[entry.document[doc][0]] = score
+    obj = matrix_hash[qid]
+    for item in proximity:
+        if item not in all_docs[qid]:
+            continue
+        obj.prox[item] = proximity[item]
     proximity = sort_v2(proximity, K)
     return [proximity]
     pass
@@ -373,7 +378,7 @@ def do_search(entry):
             Okapi_BM25 = output_format(Okapi_BM25, result[2], temp)
             Laplace_smoothing = output_format(Laplace_smoothing, result[3], temp)
             Jelinek_Mercer = output_format(Jelinek_Mercer, result[4], temp)
-            new_model = new_search(entry, questions[index], K)
+            new_model = new_search(entry, int(index), questions[index], K, category)
             proximity = output_format(proximity, new_model[0], temp)
     pass
 
